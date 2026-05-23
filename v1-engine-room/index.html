@@ -9,17 +9,6 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- SVG filter defs for steam turbulence (applied via CSS filter on .cloud) -->
-  <svg class="svg-filters" aria-hidden="true" width="0" height="0">
-    <defs>
-      <filter id="steam-warp" x="-50%" y="-50%" width="200%" height="200%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="3" seed="42" result="noise" />
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G" />
-        <feGaussianBlur stdDeviation="1.2" />
-      </filter>
-    </defs>
-  </svg>
-
   <div class="valhalla-mark">VALHALLA</div>
 
   <!-- Full-height cog columns framing both sides of the viewport -->
@@ -36,6 +25,9 @@
     </section>
   </main>
 
+  <!-- Full-viewport WebGL steam (pipe mouths tracked from .smokestacks) -->
+  <div class="steam-fluid-layer" aria-hidden="true"></div>
+
   <!-- Two right-side smokestacks (details built in app.js) -->
   <div class="smokestacks" aria-hidden="true">
     <div class="stack stack-a" data-stack-id="a"></div>
@@ -48,6 +40,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script type="module" src="app.js?v=5"></script>
+  <script type="module" src="app.js?v=19"></script>
 </body>
 </html>

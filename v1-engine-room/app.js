@@ -2,9 +2,10 @@
 // - Procedurally generates viewport-pinned side cog columns
 // - Ties rotation to scroll via GSAP ScrollTrigger
 // - Brass pressure-gauge tool cards from shared link data
-// - Procedural smokestacks with phased, realistic steam bursts
+// - Procedural smokestacks with WebGL fluid steam bursts
 
 import { VALHALLA_LINKS } from "../shared/links.js";
+import { createFluidSteam } from "./fluid-steam.js?v=19";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -1442,11 +1443,11 @@ function buildSmokestack(stackEl, seed) {
 
   const origin = document.createElement("div");
   origin.className = "puff-origin";
+  cap.appendChild(origin);
 
   stackEl.appendChild(shaft);
   stackEl.appendChild(details);
   stackEl.appendChild(cap);
-  stackEl.appendChild(origin);
 }
 
 document.querySelectorAll(".stack").forEach((stack) => {
@@ -1511,136 +1512,43 @@ function tickMarks(cx, cy, r, startAngle, endAngle, count, length = 10) {
   return s;
 }
 
-/* ---------- Steam bursts (phased, per-stack) -------------------------- */
+/* ---------- WebGL steam (phased, per-stack) --------------------------- */
 const stacks = Array.from(document.querySelectorAll(".stack"));
-const burstTimers = [];
+const steamLayerEl = document.querySelector(".steam-fluid-layer");
 const steamScheduleTimers = [];
-let burstGen = 0;
 
-function clearBurstTimers() {
-  burstTimers.forEach((t) => clearTimeout(t));
-  burstTimers.length = 0;
+function getPuffOrigins() {
+  return stacks.map((s) => s.querySelector(".puff-origin")).filter(Boolean);
 }
+
+let fluidSteam = steamLayerEl
+  ? createFluidSteam({
+      layer: steamLayerEl,
+      getOriginElements: getPuffOrigins,
+      reducedMotion,
+    })
+  : null;
 
 function clearSteamSchedulers() {
   steamScheduleTimers.forEach((t) => clearTimeout(t));
   steamScheduleTimers.length = 0;
 }
 
-function spawnPuff(origin, opts = {}) {
-  const {
-    size = 140,
-    blur = 14,
-    dx = 0,
-    dyVh = 55,
-    scale = 2.8,
-    rot = 0,
-    dur = 8000,
-    delay = 0,
-    peak = 0.55,
-    phase = "main",
-  } = opts;
-
-  const c = document.createElement("div");
-  c.className = `cloud cloud--${phase}`;
-  c.style.setProperty("--size", `${size}px`);
-  c.style.setProperty("--blur", `${blur}px`);
-  c.style.setProperty("--dx", `${dx}px`);
-  c.style.setProperty("--dy", `-${dyVh}vh`);
-  c.style.setProperty("--scale", scale);
-  c.style.setProperty("--rot", `${rot}deg`);
-  c.style.setProperty("--dur", `${dur}ms`);
-  c.style.setProperty("--delay", `${delay}ms`);
-  c.style.setProperty("--peak", peak);
-  c.style.setProperty("--curl", `${(Math.random() - 0.5) * 50}px`);
-
-  origin.appendChild(c);
-  const removeAt = dur + delay + 400;
-  const t = setTimeout(() => c.remove(), removeAt);
-  burstTimers.push(t);
-  return c;
-}
-
 function releaseSteam(stack) {
-  const origin = stack.querySelector(".puff-origin");
-  if (!origin || reducedMotion) return;
-
-  const burstId = ++burstGen;
-  const baseDelay = 0;
-
-  // Phase 1: dense vent emission (0–2s)
-  const phase1Count = 8 + Math.floor(Math.random() * 6);
-  for (let i = 0; i < phase1Count; i++) {
-    spawnPuff(origin, {
-      size: 50 + Math.random() * 40,
-      blur: 6 + Math.random() * 6,
-      dx: (Math.random() - 0.5) * 80,
-      dyVh: 18 + Math.random() * 12,
-      scale: 1.2 + Math.random() * 0.6,
-      dur: 3500 + Math.random() * 1500,
-      delay: baseDelay + Math.floor(Math.random() * 1800),
-      peak: 0.4 + Math.random() * 0.25,
-      phase: "vent",
-    });
-  }
-
-  // Phase 2: main column (2–6s)
-  const phase2Waves = 3 + Math.floor(Math.random() * 2);
-  for (let w = 0; w < phase2Waves; w++) {
-    const waveDelay = 2000 + w * 900 + Math.floor(Math.random() * 400);
-    const t = setTimeout(() => {
-      if (burstGen !== burstId) return;
-      const count = 4 + Math.floor(Math.random() * 4);
-      for (let i = 0; i < count; i++) {
-        spawnPuff(origin, {
-          size: 130 + Math.random() * 100,
-          blur: 12 + Math.random() * 10,
-          dx: (Math.random() - 0.5) * 200,
-          dyVh: 45 + Math.random() * 25,
-          scale: 2.5 + Math.random() * 1.5,
-          rot: (Math.random() - 0.5) * 60,
-          dur: 7000 + Math.random() * 4000,
-          delay: Math.floor(Math.random() * 500),
-          peak: 0.45 + Math.random() * 0.25,
-          phase: "main",
-        });
-      }
-    }, waveDelay);
-    burstTimers.push(t);
-  }
-
-  // Phase 3: trailing wisps (4–9s)
-  const wispCount = 5 + Math.floor(Math.random() * 5);
-  for (let i = 0; i < wispCount; i++) {
-    const t = setTimeout(() => {
-      if (burstGen !== burstId) return;
-      spawnPuff(origin, {
-        size: 90 + Math.random() * 70,
-        blur: 16 + Math.random() * 8,
-        dx: (Math.random() - 0.5) * 160,
-        dyVh: 35 + Math.random() * 20,
-        scale: 2 + Math.random() * 1.2,
-        dur: 9000 + Math.random() * 3000,
-        delay: Math.floor(Math.random() * 800),
-        peak: 0.2 + Math.random() * 0.2,
-        phase: "trail",
-      });
-    }, 4000 + Math.floor(Math.random() * 4500));
-    burstTimers.push(t);
-  }
+  if (!fluidSteam || reducedMotion) return;
+  const idx = stacks.indexOf(stack);
+  fluidSteam.burstAtStack(idx >= 0 ? idx : 0);
 }
 
 function scheduleSteamForStack(stack) {
   const delay =
     Math.random() < 0.12
-      ? 35000 + Math.random() * 10000
-      : 12000 + Math.random() * 16000;
+      ? 22000 + Math.random() * 10000
+      : 10000 + Math.random() * 10000;
 
   const t = setTimeout(() => {
-    if (Math.random() > 0.15) {
-      releaseSteam(stack);
-    }
-    if (Math.random() < 0.08) {
+    releaseSteam(stack);
+    if (Math.random() < 0.06) {
       const other = stacks.find((s) => s !== stack);
       if (other) releaseSteam(other);
     }
@@ -1649,11 +1557,13 @@ function scheduleSteamForStack(stack) {
   steamScheduleTimers.push(t);
 }
 
-stacks.forEach((stack) => scheduleSteamForStack(stack));
-const initialSteamTimer = setTimeout(() => {
-  releaseSteam(stacks[Math.floor(Math.random() * stacks.length)]);
-}, 4000 + Math.random() * 4000);
-steamScheduleTimers.push(initialSteamTimer);
+if (fluidSteam) {
+  stacks.forEach((stack) => scheduleSteamForStack(stack));
+  const initialSteamTimer = setTimeout(() => {
+    releaseSteam(stacks[Math.floor(Math.random() * stacks.length)]);
+  }, 3000 + Math.random() * 3000);
+  steamScheduleTimers.push(initialSteamTimer);
+}
 
 /* ---------- Init ------------------------------------------------------ */
 requestAnimationFrame(() => {
@@ -1665,15 +1575,17 @@ let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    clearBurstTimers();
     clearSteamSchedulers();
-    burstGen++;
+    if (fluidSteam) fluidSteam.clear();
     buildAllCogColumns();
     ScrollTrigger.refresh();
     stacks.forEach((stack) => {
       const id = stack.dataset.stackId || "a";
       buildSmokestack(stack, id === "a" ? 4401 : 8802);
     });
-    stacks.forEach(scheduleSteamForStack);
+    if (fluidSteam) {
+      fluidSteam.resize();
+      stacks.forEach(scheduleSteamForStack);
+    }
   }, 200);
 });
