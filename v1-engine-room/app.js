@@ -51,6 +51,80 @@ function gearClipPathId(gearId) {
   return `gclip-${gearId.replace(/[^a-z0-9-]/gi, "")}`;
 }
 
+function gearMaskId(gearId) {
+  return `gmask-${gearId.replace(/[^a-z0-9-]/gi, "")}`;
+}
+
+function createCutoutRegistry() {
+  const holes = [];
+  return {
+    add(d, evenodd = false) {
+      holes.push({ d, evenodd });
+    },
+    addCircle(cx, cy, r) {
+      this.add(circlePathD(cx, cy, r));
+    },
+    addAnnulus(cx, cy, outerR, innerR) {
+      this.add(`${circlePathD(cx, cy, outerR)} ${circlePathD(cx, cy, innerR)}`, true);
+    },
+    addSector(cx, cy, r0, r1, a0, a1) {
+      this.add(sectorPathD(cx, cy, r0, r1, a0, a1));
+    },
+    get all() {
+      return holes;
+    },
+  };
+}
+
+function ensureGearMask(svgRoot, gearId, gearShape, cutouts) {
+  const defs = svgRoot.querySelector("defs") || (() => {
+    const d = document.createElementNS(NS, "defs");
+    svgRoot.insertBefore(d, svgRoot.firstChild);
+    return d;
+  })();
+  const id = gearMaskId(gearId);
+  const existing = defs.querySelector(`#${id}`);
+  if (existing) existing.remove();
+
+  const mask = el("mask", { id });
+  mask.setAttribute("maskUnits", "userSpaceOnUse");
+  mask.setAttribute("x", "-50%");
+  mask.setAttribute("y", "-50%");
+  mask.setAttribute("width", "200%");
+  mask.setAttribute("height", "200%");
+  mask.appendChild(el("path", { d: gearShape, fill: "white" }));
+  for (const { d, evenodd } of cutouts) {
+    mask.appendChild(el("path", {
+      d,
+      fill: "black",
+      "fill-rule": evenodd ? "evenodd" : "nonzero",
+    }));
+  }
+  defs.appendChild(mask);
+}
+
+function appendHoleRims(g, cx, cy, innerR, outerR, finish) {
+  const p = depthPalette(finish);
+  if (innerR > 0) {
+    g.appendChild(el("circle", {
+      cx, cy, r: innerR,
+      fill: "none",
+      stroke: p.highlight,
+      "stroke-width": Math.max(0.45, innerR * 0.05),
+      opacity: 0.32,
+    }));
+  }
+  if (outerR > 0) {
+    g.appendChild(el("circle", {
+      cx, cy, r: outerR,
+      fill: "none",
+      stroke: p.shadow,
+      "stroke-width": Math.max(0.45, outerR * 0.04),
+      opacity: 0.36,
+    }));
+  }
+}
+
 function hexToRgb(hex) {
   const h = hex.replace("#", "");
   const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
@@ -101,48 +175,71 @@ function sectorPathD(cx, cy, r0, r1, a0, a1) {
   return `M ${x0o} ${y0o} A ${r1} ${r1} 0 ${large} 1 ${x1o} ${y1o} L ${x1i} ${y1i} A ${r0} ${r0} 0 ${large} 0 ${x0i} ${y0i} Z`;
 }
 
-function appendHollowAnnulus(g, cx, cy, outerR, innerR, finish, opts = {}) {
+function wantsThrough(geom, opts) {
+  return !!(opts.through && geom?.throughCutouts && geom?.cutouts);
+}
+
+/** Transparent windows only in the angular gaps between spokes (hub stays tied to rim via spokes). */
+function appendSpokeGapVoids(g, geom, finish, spokes, phase, opts = {}) {
+  const { cx, cy, hubR, innerR } = geom;
+  const gap = (Math.PI * 2) / spokes;
+  const inset = opts.edgeInset ?? 0.14;
+  const rInner = hubR * (opts.hubMargin ?? 1.32);
+  const rOuter = innerR * (opts.faceMax ?? 0.96);
+  for (let i = 0; i < spokes; i++) {
+    const a0 = phase + i * gap + gap * inset;
+    const a1 = phase + (i + 1) * gap - gap * inset;
+    appendSectorVoid(g, geom, cx, cy, rInner, rOuter, a0, a1, finish, {
+      through: opts.through,
+    });
+  }
+}
+
+function appendHollowAnnulus(g, geom, cx, cy, outerR, innerR, finish, opts = {}) {
   if (innerR >= outerR - 0.5) return;
+  if (wantsThrough(geom, opts)) {
+    geom.cutouts.addAnnulus(cx, cy, outerR, innerR);
+    appendHoleRims(g, cx, cy, innerR, outerR, finish);
+    return;
+  }
   const p = depthPalette(finish);
-  const fill = opts.through
-    ? `url(#${finish.voidGradId})`
-  : `url(#${finish.recessGradId})`;
   g.appendChild(el("path", {
     d: `${circlePathD(cx, cy, outerR)} ${circlePathD(cx, cy, innerR)}`,
-    fill,
+    fill: `url(#${finish.recessGradId})`,
     "fill-rule": "evenodd",
     opacity: opts.opacity ?? 0.95,
   }));
-  g.appendChild(el("circle", {
-    cx, cy, r: innerR,
-    fill: "none",
-    stroke: p.highlight,
-    "stroke-width": Math.max(0.5, innerR * 0.05),
-    opacity: 0.28 + (opts.rimLight ?? 0.12),
-  }));
-  g.appendChild(el("circle", {
-    cx, cy, r: outerR,
-    fill: "none",
-    stroke: p.shadow,
-    "stroke-width": Math.max(0.5, outerR * 0.04),
-    opacity: 0.32,
-  }));
+  appendHoleRims(g, cx, cy, innerR, outerR, finish);
 }
 
-function appendSectorVoid(g, cx, cy, r0, r1, a0, a1, finish, opts = {}) {
+function appendSectorVoid(g, geom, cx, cy, r0, r1, a0, a1, finish, opts = {}) {
   if (r1 <= r0 + 0.5 || a1 <= a0) return;
+  if (wantsThrough(geom, opts)) {
+    geom.cutouts.addSector(cx, cy, r0, r1, a0, a1);
+    const midA = (a0 + a1) / 2;
+    const p = depthPalette(finish);
+    g.appendChild(el("line", {
+      x1: cx + Math.cos(midA) * r1 * 0.98,
+      y1: cy + Math.sin(midA) * r1 * 0.98,
+      x2: cx + Math.cos(midA) * r0,
+      y2: cy + Math.sin(midA) * r0,
+      stroke: p.shadow,
+      "stroke-width": Math.max(0.6, r1 * 0.025),
+      opacity: 0.35,
+      "stroke-linecap": "round",
+    }));
+    return;
+  }
   const p = depthPalette(finish);
   g.appendChild(el("path", {
     d: sectorPathD(cx, cy, r0, r1, a0, a1),
-    fill: opts.through ? `url(#${finish.voidGradId})` : `url(#${finish.recessGradId})`,
+    fill: `url(#${finish.recessGradId})`,
     opacity: opts.opacity ?? 0.92,
   }));
   const midA = (a0 + a1) / 2;
-  const rimR = r1 * 0.98;
-  const lx = cx + Math.cos(midA) * rimR;
-  const ly = cy + Math.sin(midA) * rimR;
   g.appendChild(el("line", {
-    x1: lx, y1: ly,
+    x1: cx + Math.cos(midA) * r1 * 0.98,
+    y1: cy + Math.sin(midA) * r1 * 0.98,
     x2: cx + Math.cos(midA) * r0,
     y2: cy + Math.sin(midA) * r0,
     stroke: p.shadow,
@@ -152,16 +249,32 @@ function appendSectorVoid(g, cx, cy, r0, r1, a0, a1, finish, opts = {}) {
   }));
 }
 
-function appendRaisedBoss(g, cx, cy, radius, finish, opts = {}) {
+function appendRaisedBoss(g, geom, cx, cy, radius, finish, opts = {}) {
   const p = depthPalette(finish);
   const r = radius;
-  g.appendChild(el("circle", {
-    cx, cy, r,
-    fill: `url(#${finish.raisedGradId})`,
-    stroke: p.shadow,
-    "stroke-width": Math.max(0.6, r * 0.06),
-    opacity: opts.opacity ?? 0.94,
-  }));
+  const boreInner = r * (opts.boreInner ?? 0.18);
+
+  if (opts.bore && wantsThrough(geom, { through: true })) {
+    const boreOuter = r * (opts.boreOuter ?? 0.42);
+    geom.cutouts.addAnnulus(cx, cy, boreOuter, boreInner);
+    g.appendChild(el("path", {
+      d: `${circlePathD(cx, cy, r)} ${circlePathD(cx, cy, boreInner)}`,
+      fill: `url(#${finish.raisedGradId})`,
+      "fill-rule": "evenodd",
+      stroke: p.shadow,
+      "stroke-width": Math.max(0.6, r * 0.06),
+      opacity: opts.opacity ?? 0.94,
+    }));
+  } else {
+    g.appendChild(el("circle", {
+      cx, cy, r,
+      fill: `url(#${finish.raisedGradId})`,
+      stroke: p.shadow,
+      "stroke-width": Math.max(0.6, r * 0.06),
+      opacity: opts.opacity ?? 0.94,
+    }));
+  }
+
   g.appendChild(el("ellipse", {
     cx: cx - r * 0.22,
     cy: cy - r * 0.26,
@@ -170,12 +283,6 @@ function appendRaisedBoss(g, cx, cy, radius, finish, opts = {}) {
     fill: p.highlight,
     opacity: 0.07 + (opts.gloss ?? 0.06),
   }));
-  if (opts.bore) {
-    appendHollowAnnulus(g, cx, cy, r * (opts.boreOuter ?? 0.42), r * (opts.boreInner ?? 0.18), finish, {
-      through: true,
-      opacity: 0.98,
-    });
-  }
 }
 
 function appendChamferedSpoke(g, cx, cy, angle, hubR, innerR, finish, spokeW) {
@@ -235,7 +342,7 @@ function appendGearSilhouette(g, cx, cy, teeth, outerR, rootR, phase, attrs) {
   g.appendChild(el("path", { d: gearPath(cx, cy, teeth, outerR, rootR, phase), ...attrs }));
 }
 
-function appendNestedGear(g, cx, cy, teeth, outerR, phase, finish, opts = {}) {
+function appendNestedGear(g, geom, cx, cy, teeth, outerR, phase, finish, opts = {}) {
   const rootR = outerR * (opts.rootRatio ?? 0.72);
   const hubHole = outerR * (opts.holeRatio ?? 0.22);
   const opacity = opts.opacity ?? 0.9;
@@ -243,6 +350,7 @@ function appendNestedGear(g, cx, cy, teeth, outerR, phase, finish, opts = {}) {
   const gearD = gearPath(cx, cy, teeth, outerR, rootR, phase);
 
   if (opts.hollow) {
+    if (wantsThrough(geom, { through: true })) geom.cutouts.addCircle(cx, cy, hubHole);
     g.appendChild(el("path", {
       d: `${gearD} ${circlePathD(cx, cy, hubHole)}`,
       fill: `url(#${finish.raisedGradId})`,
@@ -251,7 +359,7 @@ function appendNestedGear(g, cx, cy, teeth, outerR, phase, finish, opts = {}) {
       "stroke-width": opts.strokeWidth ?? Math.max(0.7, outerR * 0.05),
       opacity,
     }));
-    appendHollowAnnulus(g, cx, cy, hubHole * 1.02, hubHole * 0.55, finish, { through: true, opacity: opacity * 0.95 });
+    appendHoleRims(g, cx, cy, hubHole, hubHole * 1.05, finish);
   } else {
     appendGearSilhouette(g, cx, cy, teeth, outerR, rootR, phase, {
       fill: opts.fill || `url(#${finish.raisedGradId})`,
@@ -333,7 +441,7 @@ function appendPocketGears(g, geom, finish, rng, count, opts = {}) {
     const a = gapCenterAngle(i, spokes, phase) + (rng() - 0.5) * 0.08;
     const teeth = (opts.teethBase ?? 7) + (i % 4);
     const size = hubR * (opts.sizeBase ?? 0.5) * (0.85 + (i % 3) * 0.12);
-    appendNestedGear(g, cx + Math.cos(a) * orbit, cy + Math.sin(a) * orbit, teeth, size, a + Math.PI / teeth, finish, {
+    appendNestedGear(g, geom, cx + Math.cos(a) * orbit, cy + Math.sin(a) * orbit, teeth, size, a + Math.PI / teeth, finish, {
       hollow: true,
       opacity: opts.opacity ?? 0.84,
     });
@@ -374,33 +482,32 @@ function appendInnerToothRing(g, geom, finish, scale = 0.9, filled = false) {
 
 function defaultDrawHub(g, geom, finish) {
   const { cx, cy, hubR } = geom;
-  appendRaisedBoss(g, cx, cy, hubR, finish, { gloss: 0.08 });
-  appendHollowAnnulus(g, cx, cy, hubR * 0.88, hubR * 0.38, finish, { through: false });
-  appendHollowAnnulus(g, cx, cy, hubR * 0.34, hubR * 0.12, finish, { through: true });
+  if (geom.throughCutouts) {
+    appendRaisedBoss(g, geom, cx, cy, hubR, finish, { gloss: 0.08, bore: true, boreOuter: 0.38, boreInner: 0.12 });
+  } else {
+    appendRaisedBoss(g, geom, cx, cy, hubR, finish, { gloss: 0.08 });
+    appendHollowAnnulus(g, geom, cx, cy, hubR * 0.88, hubR * 0.42, finish, { through: false });
+  }
 }
 
 const COG_DESIGNS = [
   {
     id: "quadrant-nested",
     spokes: 4,
+    throughCutouts: true,
     draw(g, geom, finish, rng) {
       const { cx, cy, hubR, innerR, phase } = geom;
       const mid = midFaceRadius(geom);
-      const gap = Math.PI / 2;
-      for (let i = 0; i < 4; i++) {
-        const a0 = phase + i * gap + gap * 0.12;
-        const a1 = phase + (i + 1) * gap - gap * 0.12;
-        appendSectorVoid(g, cx, cy, hubR * 1.05, innerR * 0.96, a0, a1, finish);
-      }
-      appendHollowAnnulus(g, cx, cy, innerR * 0.92, hubR * 1.35, finish);
+      appendSpokeGapVoids(g, geom, finish, 4, phase, { through: true });
+      appendHollowAnnulus(g, geom, cx, cy, innerR * 0.92, hubR * 1.35, finish, { through: false });
       appendInnerToothRing(g, geom, finish, 0.94);
       const angles = [phase + Math.PI * 0.25, phase + Math.PI * 0.75, phase + Math.PI * 1.25, phase + Math.PI * 1.75];
       const sizes = [hubR * 0.55, hubR * 0.42, hubR * 0.48, hubR * 0.38];
       angles.forEach((a, i) => {
         const px = cx + Math.cos(a) * mid;
         const py = cy + Math.sin(a) * mid;
-        appendRaisedBoss(g, px, py, sizes[i] * 1.08, finish, { gloss: 0.05 });
-        appendNestedGear(g, px, py, 8 + (i % 2) * 2, sizes[i], a + rng() * 0.08, finish, {
+        appendRaisedBoss(g, geom, px, py, sizes[i] * 1.08, finish, { gloss: 0.05 });
+        appendNestedGear(g, geom, px, py, 8 + (i % 2) * 2, sizes[i], a + rng() * 0.08, finish, {
           hollow: true, opacity: 0.9,
         });
       });
@@ -412,19 +519,19 @@ const COG_DESIGNS = [
     draw(g, geom, finish, rng) {
       const { cx, cy, hubR, phase } = geom;
       const orbit = hubR * 1.5 + (geom.innerR - hubR) * 0.45;
-      appendHollowAnnulus(g, cx, cy, orbit * 1.06, orbit * 0.78, finish);
-      appendHollowAnnulus(g, cx, cy, geom.innerR * 0.9, hubR * 1.2, finish);
+      appendHollowAnnulus(g, geom, cx, cy, orbit * 1.06, orbit * 0.78, finish, { through: false });
+      appendHollowAnnulus(g, geom, cx, cy, geom.innerR * 0.9, hubR * 1.2, finish, { through: false });
       appendInnerToothRing(g, geom, finish, 0.82);
       for (let i = 0; i < 4; i++) {
         const a = gapCenterAngle(i, 4, phase);
         const px = cx + Math.cos(a) * orbit;
         const py = cy + Math.sin(a) * orbit;
-        appendRaisedBoss(g, px, py, hubR * 0.58, finish);
-        appendNestedGear(g, px, py, 8, hubR * 0.48, a + Math.PI / 3, finish, { hollow: true, opacity: 0.88 });
+        appendRaisedBoss(g, geom, px, py, hubR * 0.58, finish);
+        appendNestedGear(g, geom, px, py, 8, hubR * 0.48, a + Math.PI / 3, finish, { hollow: true, opacity: 0.88 });
       }
       for (let i = 0; i < 4; i++) {
         const a = gapCenterAngle(i, 4, phase);
-        appendNestedGear(g, cx + Math.cos(a) * hubR * 1.12, cy + Math.sin(a) * hubR * 1.12, 6, hubR * 0.32, a, finish, {
+        appendNestedGear(g, geom, cx + Math.cos(a) * hubR * 1.12, cy + Math.sin(a) * hubR * 1.12, 6, hubR * 0.32, a, finish, {
           hollow: true, opacity: 0.78,
         });
       }
@@ -435,8 +542,8 @@ const COG_DESIGNS = [
     spokes: 6,
     draw(g, geom, finish, rng) {
       const { cx, cy, hubR, innerR } = geom;
-      appendHollowAnnulus(g, cx, cy, innerR * 0.95, hubR * 1.25, finish, { through: false });
-      appendHollowAnnulus(g, cx, cy, innerR * 0.72, innerR * 0.48, finish);
+      appendHollowAnnulus(g, geom, cx, cy, innerR * 0.95, hubR * 1.25, finish, { through: false });
+      appendHollowAnnulus(g, geom, cx, cy, innerR * 0.72, innerR * 0.48, finish, { through: false });
       appendInnerToothRing(g, geom, finish, 0.92);
       appendGearSilhouette(g, cx, cy, Math.max(14, Math.floor(geom.teeth * 0.55)), innerR * 0.88, innerR * 0.68, geom.phase, {
         fill: `url(#${finish.raisedGradId})`,
@@ -449,7 +556,7 @@ const COG_DESIGNS = [
       });
       for (let i = 0; i < 6; i++) {
         const a = gapCenterAngle(i, 6, geom.phase);
-        appendNestedGear(g, cx + Math.cos(a) * (hubR * 1.08), cy + Math.sin(a) * (hubR * 1.08), 5, hubR * 0.28, a, finish, {
+        appendNestedGear(g, geom, cx + Math.cos(a) * (hubR * 1.08), cy + Math.sin(a) * (hubR * 1.08), 5, hubR * 0.28, a, finish, {
           hollow: true, opacity: 0.75,
         });
       }
@@ -458,13 +565,15 @@ const COG_DESIGNS = [
   {
     id: "bridged-spokes",
     spokes: 6,
+    throughCutouts: true,
     draw(g, geom, finish, rng) {
       const { cx, cy, hubR, innerR, phase } = geom;
       const bridgeR = hubR + (innerR - hubR) * 0.52;
+      appendSpokeGapVoids(g, geom, finish, 6, phase, { through: true, hubMargin: 1.28 });
       for (let i = 0; i < 6; i++) {
         const a0 = (i / 6) * Math.PI * 2 + phase + 0.08;
         const a1 = ((i + 1) / 6) * Math.PI * 2 + phase - 0.08;
-        appendSectorVoid(g, cx, cy, bridgeR * 0.88, innerR * 0.94, a0, a1, finish);
+        appendSectorVoid(g, geom, cx, cy, bridgeR * 0.92, innerR * 0.94, a0, a1, finish, { through: false });
       }
       appendInnerToothRing(g, geom, finish, 0.86);
       const p = depthPalette(finish);
@@ -491,8 +600,8 @@ const COG_DESIGNS = [
       }
       for (let i = 0; i < 3; i++) {
         const a = gapCenterAngle(i * 2, 6, phase);
-        appendRaisedBoss(g, cx + Math.cos(a) * bridgeR, cy + Math.sin(a) * bridgeR, hubR * 0.5, finish);
-        appendNestedGear(g, cx + Math.cos(a) * bridgeR, cy + Math.sin(a) * bridgeR, 7, hubR * 0.4, a, finish, { hollow: true });
+        appendRaisedBoss(g, geom, cx + Math.cos(a) * bridgeR, cy + Math.sin(a) * bridgeR, hubR * 0.5, finish);
+        appendNestedGear(g, geom, cx + Math.cos(a) * bridgeR, cy + Math.sin(a) * bridgeR, 7, hubR * 0.4, a, finish, { hollow: true });
       }
     },
   },
@@ -500,7 +609,7 @@ const COG_DESIGNS = [
     id: "concentric-hub",
     spokes: 5,
     draw(g, geom, finish) {
-      appendHollowAnnulus(g, geom.cx, geom.cy, geom.innerR * 0.88, geom.hubR * 1.3, finish);
+      appendHollowAnnulus(g, geom, geom.cx, geom.cy, geom.innerR * 0.88, geom.hubR * 1.3, finish, { through: false });
       appendInnerToothRing(g, geom, finish, 0.88);
     },
     drawHub(g, geom, finish) {
@@ -510,12 +619,12 @@ const COG_DESIGNS = [
       steps.forEach((t, i) => {
         const r = hubR * t;
         if (i % 2 === 0) {
-          appendRaisedBoss(g, cx, cy, r, finish, { gloss: 0.04 + i * 0.01 });
+          appendRaisedBoss(g, geom, cx, cy, r, finish, { gloss: 0.04 + i * 0.01 });
         } else if (i < steps.length - 1) {
-          appendHollowAnnulus(g, cx, cy, hubR * steps[i - 1], r, finish);
+          appendHollowAnnulus(g, geom, cx, cy, hubR * steps[i - 1], r, finish, { through: false });
         }
       });
-      appendHollowAnnulus(g, cx, cy, hubR * 0.3, hubR * 0.1, finish, { through: true });
+      appendHollowAnnulus(g, geom, cx, cy, hubR * 0.3, hubR * 0.1, finish, { through: false });
     },
   },
   {
@@ -524,40 +633,37 @@ const COG_DESIGNS = [
     curvedSpokes: true,
     draw(g, geom, finish, rng) {
       const { cx, cy, hubR, innerR, phase } = geom;
-      for (let i = 0; i < 4; i++) {
-        const a0 = phase + i * (Math.PI / 2) + 0.15;
-        const a1 = phase + (i + 1) * (Math.PI / 2) - 0.15;
-        appendSectorVoid(g, cx, cy, hubR * 1.08, innerR * 0.92, a0, a1, finish, { through: false });
-      }
       appendInnerToothRing(g, geom, finish, 0.9);
       const mid = midFaceRadius(geom) * 0.78;
       for (let i = 0; i < 4; i++) {
         const a = gapCenterAngle(i, 4, phase);
         const px = cx + Math.cos(a) * mid;
         const py = cy + Math.sin(a) * mid;
-        appendRaisedBoss(g, px, py, hubR * 0.52, finish);
-        appendNestedGear(g, px, py, 11, hubR * 0.44, a + rng() * 0.1, finish, { hollow: true, opacity: 0.88 });
+        appendRaisedBoss(g, geom, px, py, hubR * 0.52, finish);
+        appendNestedGear(g, geom, px, py, 11, hubR * 0.44, a + rng() * 0.1, finish, { hollow: true, opacity: 0.88 });
       }
     },
   },
   {
     id: "clockwork-triple",
     spokes: 4,
+    throughCutouts: true,
     draw(g, geom, finish, rng) {
       const { cx, cy, hubR, innerR, phase } = geom;
-      appendHollowAnnulus(g, cx, cy, innerR * 0.9, hubR * 1.15, finish);
+      appendSpokeGapVoids(g, geom, finish, 4, phase, { through: true });
+      appendHollowAnnulus(g, geom, cx, cy, innerR * 0.9, hubR * 1.15, finish, { through: false });
       appendInnerToothRing(g, geom, finish, 0.85);
-      appendRaisedBoss(g, cx, cy, hubR * 0.52, finish, { bore: true, gloss: 0.1 });
-      appendNestedGear(g, cx, cy, 12, hubR * 0.44, phase, finish, { hollow: true, opacity: 0.92 });
+      appendRaisedBoss(g, geom, cx, cy, hubR * 0.52, finish, { bore: true, gloss: 0.1 });
+      appendNestedGear(g, geom, cx, cy, 12, hubR * 0.44, phase, finish, { hollow: true, opacity: 0.92 });
       const orbit = hubR * 1.32;
       for (let i = 0; i < 3; i++) {
         const a = (i / 3) * Math.PI * 2 + phase + Math.PI / 6;
         const px = cx + Math.cos(a) * orbit;
         const py = cy + Math.sin(a) * orbit;
-        appendSectorVoid(g, cx, cy, orbit * 0.55, orbit * 0.85, a - 0.35, a + 0.35, finish);
-        appendRaisedBoss(g, px, py, hubR * 0.44, finish);
-        appendNestedGear(g, px, py, 8, hubR * 0.36, a + Math.PI / 2, finish, { hollow: true, opacity: 0.85 });
-        appendNestedGear(g, cx + Math.cos(a + 0.18) * (orbit * 0.7), cy + Math.sin(a + 0.18) * (orbit * 0.7),
+        appendSectorVoid(g, geom, cx, cy, orbit * 0.55, orbit * 0.85, a - 0.35, a + 0.35, finish, { through: false });
+        appendRaisedBoss(g, geom, px, py, hubR * 0.44, finish);
+        appendNestedGear(g, geom, px, py, 8, hubR * 0.36, a + Math.PI / 2, finish, { hollow: true, opacity: 0.85 });
+        appendNestedGear(g, geom, cx + Math.cos(a + 0.18) * (orbit * 0.7), cy + Math.sin(a + 0.18) * (orbit * 0.7),
           6, hubR * 0.26, a, finish, { hollow: true, opacity: 0.72 });
       }
     },
@@ -565,15 +671,11 @@ const COG_DESIGNS = [
   {
     id: "layered-plates",
     spokes: 4,
+    throughCutouts: true,
     draw(g, geom, finish) {
       const { cx, cy, hubR, innerR, phase } = geom;
       const p = depthPalette(finish);
-      for (let i = 0; i < 4; i++) {
-        const mid = gapCenterAngle(i, 4, phase);
-        const a0 = mid - Math.PI * 0.2;
-        const a1 = mid + Math.PI * 0.2;
-        appendSectorVoid(g, cx, cy, hubR * 1.1, innerR * 0.94, a0, a1, finish);
-      }
+      appendSpokeGapVoids(g, geom, finish, 4, phase, { through: true });
       for (let pIdx = 0; pIdx < 3; pIdx++) {
         const r1 = hubR * (1.32 + pIdx * 0.2);
         const r2 = hubR * (1.52 + pIdx * 0.2);
@@ -606,11 +708,7 @@ const COG_DESIGNS = [
     spokes: 6,
     draw(g, geom, finish, rng) {
       const { cx, cy, hubR, innerR, phase } = geom;
-      for (let i = 0; i < 6; i++) {
-        const a0 = phase + i * (Math.PI / 3) + 0.12;
-        const a1 = phase + (i + 1) * (Math.PI / 3) - 0.12;
-        appendSectorVoid(g, cx, cy, hubR * 0.95, innerR * 0.92, a0, a1, finish);
-      }
+      appendSpokeGapVoids(g, geom, finish, 6, phase, { through: false });
       appendInnerToothRing(g, geom, finish, 0.9);
       const points = 6;
       const outer = hubR * 0.9;
@@ -628,24 +726,26 @@ const COG_DESIGNS = [
         "stroke-width": 1.1,
         opacity: 0.92,
       }));
-      appendHollowAnnulus(g, cx, cy, hubR * 0.55, hubR * 0.22, finish, { through: true });
+      appendHollowAnnulus(g, geom, cx, cy, hubR * 0.55, hubR * 0.22, finish, { through: false });
       for (let i = 0; i < 3; i++) {
         const a = gapCenterAngle(i * 2, 6, phase);
-        appendRaisedBoss(g, cx + Math.cos(a) * hubR * 1.55, cy + Math.sin(a) * hubR * 1.55, hubR * 0.48, finish);
-        appendNestedGear(g, cx + Math.cos(a) * hubR * 1.6, cy + Math.sin(a) * hubR * 1.6, 7, hubR * 0.4, a, finish, { hollow: true });
+        appendRaisedBoss(g, geom, cx + Math.cos(a) * hubR * 1.55, cy + Math.sin(a) * hubR * 1.55, hubR * 0.48, finish);
+        appendNestedGear(g, geom, cx + Math.cos(a) * hubR * 1.6, cy + Math.sin(a) * hubR * 1.6, 7, hubR * 0.4, a, finish, { hollow: true });
       }
     },
     drawHub(g, geom, finish) {
-      appendHollowAnnulus(g, geom.cx, geom.cy, geom.hubR * 0.28, geom.hubR * 0.08, finish, { through: true });
+      appendRaisedBoss(g, geom, geom.cx, geom.cy, geom.hubR * 0.5, finish, { gloss: 0.06 });
     },
   },
   {
     id: "filigree-pocket",
     spokes: 4,
+    throughCutouts: true,
     draw(g, geom, finish, rng) {
       const { cx, cy, hubR, innerR, phase } = geom;
-      appendHollowAnnulus(g, cx, cy, innerR * 0.88, hubR * 1.22, finish);
-      appendHollowAnnulus(g, cx, cy, innerR * 0.62, innerR * 0.38, finish);
+      appendSpokeGapVoids(g, geom, finish, 4, phase, { through: true });
+      appendHollowAnnulus(g, geom, cx, cy, innerR * 0.88, hubR * 1.22, finish, { through: false });
+      appendHollowAnnulus(g, geom, cx, cy, innerR * 0.62, innerR * 0.38, finish, { through: false });
       appendInnerToothRing(g, geom, finish, 0.88);
       g.appendChild(el("path", {
         d: hubFiligreeRing(cx, cy, hubR * 0.9, 8, phase),
@@ -660,8 +760,8 @@ const COG_DESIGNS = [
         const a = phase + (i / 4) * Math.PI * 2 + Math.PI / 8;
         const px = cx + Math.cos(a) * mid * (0.82 + (i % 2) * 0.12);
         const py = cy + Math.sin(a) * mid * (0.82 + (i % 2) * 0.12);
-        appendRaisedBoss(g, px, py, hubR * 0.52, finish);
-        appendNestedGear(g, px, py, 7 + (i % 2) * 2, hubR * (0.48 - (i % 2) * 0.08), a, finish, { hollow: true, opacity: 0.88 });
+        appendRaisedBoss(g, geom, px, py, hubR * 0.52, finish);
+        appendNestedGear(g, geom, px, py, 7 + (i % 2) * 2, hubR * (0.48 - (i % 2) * 0.08), a, finish, { hollow: true, opacity: 0.88 });
       }
     },
     drawHub(g, geom, finish) {
@@ -689,13 +789,14 @@ function buildGear({ cx, cy, teeth, outerR, rootR, hubR, finish, design, id, pha
   const gearShape = gearPath(cx, cy, teeth, outerR, rootR, phase);
   const innerR = rootR * 0.78;
   const geom = makeGearGeom(cx, cy, outerR, rootR, hubR, phase, teeth);
+  geom.cutouts = createCutoutRegistry();
+  geom.throughCutouts = !!cogDesign.throughCutouts;
 
   if (svgRoot && finish) {
     ensureGearFinishGradients(svgRoot, id, finish, decorRng, cx, cy, outerR, rootR, hubR, phase, teeth);
   }
 
-  const clipUrl = `url(#${gearClipPathId(id)})`;
-  const body = el("g", { "clip-path": clipUrl });
+  const body = el("g");
 
   body.appendChild(el("path", {
     d: gearShape,
@@ -729,6 +830,11 @@ function buildGear({ cx, cy, teeth, outerR, rootR, hubR, finish, design, id, pha
     cogDesign.drawHub(body, geom, finish, decorRng);
   } else {
     defaultDrawHub(body, geom, finish);
+  }
+
+  if (svgRoot && geom.cutouts.all.length > 0) {
+    ensureGearMask(svgRoot, id, gearShape, geom.cutouts.all);
+    body.setAttribute("mask", `url(#${gearMaskId(id)})`);
   }
 
   g.appendChild(body);
