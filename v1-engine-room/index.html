@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valhalla - The Engine Room</title>
+  <link rel="stylesheet" href="../shared/fonts.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- SVG filter defs for steam turbulence (applied via CSS filter on .cloud) -->
+  <svg class="svg-filters" aria-hidden="true" width="0" height="0">
+    <defs>
+      <filter id="steam-warp" x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="3" seed="42" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G" />
+        <feGaussianBlur stdDeviation="1.2" />
+      </filter>
+    </defs>
+  </svg>
+
+  <div class="valhalla-mark">VALHALLA</div>
+
+  <!-- Full-height cog columns framing both sides of the viewport -->
+  <div class="cog-column cog-column-left" aria-hidden="true">
+    <svg id="cog-svg-left" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet"></svg>
+  </div>
+  <div class="cog-column cog-column-right" aria-hidden="true">
+    <svg id="cog-svg-right" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet"></svg>
+  </div>
+
+  <main class="page-main">
+    <section class="gauges-hub">
+      <div class="gauges" id="gauges"></div>
+    </section>
+  </main>
+
+  <!-- Two right-side smokestacks (details built in app.js) -->
+  <div class="smokestacks" aria-hidden="true">
+    <div class="stack stack-a" data-stack-id="a"></div>
+    <div class="stack stack-b" data-stack-id="b"></div>
+  </div>
+
+  <footer class="page-footer">
+    <span class="t-mono">// VALHALLA ENGINE ROOM // PRESSURE NOMINAL // EST. MMXXVI //</span>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script type="module" src="app.js?v=3"></script>
+</body>
+</html>

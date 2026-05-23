@@ -1,0 +1,115 @@
+/* Valhalla shared theme - the landing page pulls from this so the palette stays
+   consistent and a single change here propagates everywhere. */
+:root {
+  /* Backgrounds */
+  --bg-grey: #1a1a1d;
+  --bg-grey-2: #25262b;
+  --bg-grey-3: #2f3036;
+  --bg-panel: #1e1f23;
+
+  /* Brass / copper / gold family */
+  --brass: #b08d57;
+  --brass-light: #d4b074;
+  --brass-dark: #7a5e36;
+  --copper: #b87333;
+  --copper-light: #d68a4a;
+  --copper-dark: #7d4a1d;
+  --gold: #d4af37;
+  --gold-light: #f0cf57;
+  --gold-dark: #9a7e22;
+
+  /* Accents */
+  --ember: #ff7a18;
+  --ember-glow: #ffb56b;
+  --steam: #d8d4cc;
+  --ink: #1a0f06;
+
+  /* Text */
+  --text-primary: #e8dcc4;
+  --text-secondary: #b9a987;
+  --text-dim: #7a6e58;
+
+  /* Effects */
+  --shadow-deep: 0 10px 30px rgba(0, 0, 0, 0.6);
+  --shadow-brass: 0 0 24px rgba(212, 175, 55, 0.25);
+  --shadow-ember: 0 0 32px rgba(255, 122, 24, 0.45);
+  --inset-rivet: inset 0 0 0 2px rgba(0, 0, 0, 0.4),
+                 inset 0 2px 4px rgba(255, 220, 160, 0.15);
+
+  /* Typography */
+  --font-display: "Cinzel", serif;
+  --font-body: "IM Fell English", "Garamond", serif;
+  --font-mono: "Special Elite", "Courier New", monospace;
+
+  /* Layout */
+  --frame-radius: 6px;
+  --plaque-radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-grey);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+a { color: var(--gold); text-decoration: none; }
+a:hover { color: var(--gold-light); }
+
+/* Shared utility - the Valhalla wordmark in upper-left */
+.valhalla-mark {
+  position: fixed;
+  top: 24px;
+  left: 32px;
+  z-index: 100;
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  background: linear-gradient(180deg, var(--gold-light) 0%, var(--brass) 50%, var(--brass-dark) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
+  pointer-events: none;
+  user-select: none;
+}
+
+.valhalla-mark::after {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-top: 4px;
+  background: linear-gradient(90deg, transparent 0%, var(--brass) 30%, var(--gold) 50%, var(--brass) 70%, transparent 100%);
+}
+
+/* Coming-soon styling - applied to tool links without a real URL yet */
+[data-status="coming-soon"] {
+  position: relative;
+}
+[data-status="coming-soon"]::after {
+  content: "PENDING";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  color: var(--ember);
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--copper-dark);
+  padding: 2px 6px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Reusable text helpers */
+.t-mono { font-family: var(--font-mono); }
+.t-display { font-family: var(--font-display); letter-spacing: 0.1em; }
+.t-dim { color: var(--text-dim); }
