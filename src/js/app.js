@@ -1,11 +1,12 @@
-// v1 - Engine Room
+// Engine Room landing page
 // - Procedurally generates viewport-pinned side cog columns
 // - Ties rotation to scroll via GSAP ScrollTrigger
-// - Brass pressure-gauge tool cards from shared link data
+// - Brass pressure-gauge tool cards from links.js
 // - Procedural smokestacks with WebGL fluid steam bursts
 
-import { VALHALLA_LINKS } from "../shared/links.js";
+import { VALHALLA_LINKS } from "./links.js";
 import { createFluidSteam } from "./fluid-steam.js?v=19";
+import { attachGaugePipeNetwork, buildGaugePipeNetwork } from "./pipe-network.js?v=29";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -1178,9 +1179,10 @@ function populateCogColumn(svgEl, side) {
   while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
 
   const vh = window.innerHeight;
-  const smokestackZone = 0.32 * vh;
+  // Stacks are temporarily disabled; let the right cog chain run the full
+  // height like the left side instead of leaving its reserved smokestack zone.
   const yStart = side === "left" ? 120 : 10;
-  const yEnd = side === "right" ? vh - smokestackZone - 30 : vh - 30;
+  const yEnd = vh - 30;
 
   svgEl.setAttribute("viewBox", `0 0 ${COL_W} ${vh}`);
   svgEl.style.height = "100%";
@@ -1450,10 +1452,12 @@ function buildSmokestack(stackEl, seed) {
   stackEl.appendChild(cap);
 }
 
+/* TEMPORARILY DISABLED — smokestacks paused while we iterate on the pipe network.
 document.querySelectorAll(".stack").forEach((stack) => {
   const id = stack.dataset.stackId || "a";
   buildSmokestack(stack, id === "a" ? 4401 : 8802);
 });
+*/
 
 /* ---------- Pressure-gauge tool cards --------------------------------- */
 const gaugesContainer = document.getElementById("gauges");
@@ -1498,6 +1502,12 @@ VALHALLA_LINKS.forEach((link) => {
   gaugesContainer.appendChild(a);
 });
 
+const gaugesHubEl = document.querySelector(".gauges-hub");
+const gaugePipeSvg = document.getElementById("gauge-pipe-network");
+if (gaugesHubEl && gaugePipeSvg) {
+  attachGaugePipeNetwork({ hubEl: gaugesHubEl, svgEl: gaugePipeSvg });
+}
+
 function tickMarks(cx, cy, r, startAngle, endAngle, count, length = 10) {
   let s = "";
   for (let i = 0; i < count; i++) {
@@ -1513,6 +1523,10 @@ function tickMarks(cx, cy, r, startAngle, endAngle, count, length = 10) {
 }
 
 /* ---------- WebGL steam (phased, per-stack) --------------------------- */
+/* TEMPORARILY DISABLED — steam paused while we iterate on the pipe network.
+   The import for createFluidSteam and the .steam-fluid-layer CSS are kept in
+   place so re-enabling is a pure uncomment.
+
 const stacks = Array.from(document.querySelectorAll(".stack"));
 const steamLayerEl = document.querySelector(".steam-fluid-layer");
 const steamScheduleTimers = [];
@@ -1564,6 +1578,7 @@ if (fluidSteam) {
   }, 3000 + Math.random() * 3000);
   steamScheduleTimers.push(initialSteamTimer);
 }
+*/
 
 /* ---------- Init ------------------------------------------------------ */
 requestAnimationFrame(() => {
@@ -1575,10 +1590,11 @@ let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    clearSteamSchedulers();
-    if (fluidSteam) fluidSteam.clear();
     buildAllCogColumns();
     ScrollTrigger.refresh();
+    /* TEMPORARILY DISABLED — stack/steam rebuild paused along with the visuals.
+    clearSteamSchedulers();
+    if (fluidSteam) fluidSteam.clear();
     stacks.forEach((stack) => {
       const id = stack.dataset.stackId || "a";
       buildSmokestack(stack, id === "a" ? 4401 : 8802);
@@ -1586,6 +1602,10 @@ window.addEventListener("resize", () => {
     if (fluidSteam) {
       fluidSteam.resize();
       stacks.forEach(scheduleSteamForStack);
+    }
+    */
+    if (gaugesHubEl && gaugePipeSvg) {
+      buildGaugePipeNetwork({ hubEl: gaugesHubEl, svgEl: gaugePipeSvg });
     }
   }, 200);
 });

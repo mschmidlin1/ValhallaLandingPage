@@ -1,6 +1,6 @@
 # Valhalla Landing Page
 
-A steampunk-themed landing page for Michael Schmidlin's portfolio and personal web tools — **The Engine Room** variant.
+A steampunk-themed landing page for Michael Schmidlin's portfolio and personal web tools — **The Engine Room**.
 
 The 4 tool links on the page:
 
@@ -11,27 +11,20 @@ The 4 tool links on the page:
 | Resume Customizer | (pending) | coming soon |
 | Budget Analysis | (pending) | coming soon |
 
-Update [`shared/links.js`](shared/links.js) once and the page picks up the change.
+Update [`src/js/links.js`](src/js/links.js) once and the page picks up the change.
 
 ---
 
 ## Run locally
 
-```powershell
-.\serve.ps1
-```
+1. Install the [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) VS Code extension (recommended via workspace prompt).
+2. Open [`src/index.html`](src/index.html) and click **Go Live**.
 
 Open:
 
-- http://localhost:8001/v1-engine-room/
+- http://localhost:5500/
 
-When you're done:
-
-```powershell
-.\serve.ps1 -Stop
-```
-
-Requires Python 3 on PATH. The launcher records the spawned PID in `.serve-pids.txt` so `-Stop` knows what to kill.
+Workspace settings in [`.vscode/settings.json`](.vscode/settings.json) pin the server to port **5500** with document root `src/`.
 
 ---
 
@@ -52,7 +45,7 @@ Static HTML/CSS/JS with **no build step**. Libraries from CDNs:
 | GSAP + ScrollTrigger | 3.12.5 (cdnjs) | scroll-driven animation |
 | Google Fonts | n/a | Cinzel (display), IM Fell English (body), Special Elite (typewriter) |
 
-Gears, smokestacks, gauges, and airship silhouettes are procedurally generated SVG/CSS. Steam uses a trimmed [WebGL Fluid Simulation](https://github.com/PavelDoGreat/WebGL-Fluid-Simulation) (MIT) in `v1-engine-room/lib/fluid/`. **No raster assets** are loaded for the page UI; files in `inspiration_photos/` are vibe reference only.
+Gears, smokestacks, gauges, and airship silhouettes are procedurally generated SVG/CSS. Steam uses a trimmed [WebGL Fluid Simulation](https://github.com/PavelDoGreat/WebGL-Fluid-Simulation) (MIT) in `src/lib/fluid/`. **No raster assets** are loaded for the page UI; files in `inspiration_photos/` are vibe reference only.
 
 ---
 
@@ -60,18 +53,23 @@ Gears, smokestacks, gauges, and airship silhouettes are procedurally generated S
 
 ```
 ValhallaLandingPage/
-  shared/
-    theme.css     # palette + typography + shared utilities
-    fonts.css     # Google Fonts @import
-    links.js      # single source of truth for the 4 tool links (ES module)
-  v1-engine-room/
+  src/
     index.html
-    styles.css
-    app.js
-    fluid-steam.js
-    lib/fluid/          # MIT WebGL fluid sim (steam overlay)
-  inspiration_photos/      # vibe reference (not loaded into pages)
-  serve.ps1                # launches server on port 8001
+    css/
+      fonts.css     # Google Fonts @import
+      theme.css     # palette + typography + utilities
+      styles.css    # page layout and components
+    js/
+      app.js
+      links.js      # single source of truth for the 4 tool links
+      pipe-network.js
+      fluid-steam.js
+    lib/
+      fluid/        # MIT WebGL fluid sim (steam overlay)
+  inspiration_photos/   # vibe reference (not loaded into pages)
+  .vscode/
+    settings.json
+    extensions.json
   README.md
 ```
 
@@ -79,9 +77,9 @@ ValhallaLandingPage/
 
 ## Editing tips
 
-- **Recolor everything**: edit the CSS variables at the top of [`shared/theme.css`](shared/theme.css).
-- **Update a link**: edit [`shared/links.js`](shared/links.js). Set `status: "live"` and a real `url` to remove the "PENDING" badge.
-- **Adjust scroll-rotation speed**: search for `scrub` in [`v1-engine-room/app.js`](v1-engine-room/app.js) (lower = snappier).
-- **Tweak steam frequency**: search `scheduleSteamForStack` in [`v1-engine-room/app.js`](v1-engine-room/app.js).
-- **Tweak steam look**: edit dye/splat settings in [`v1-engine-room/fluid-steam.js`](v1-engine-room/fluid-steam.js).
-- **Tweak steam pressure / rise speed**: adjust `STEAM_PRESSURE` (0–1) at the top of [`fluid-steam.js`](v1-engine-room/fluid-steam.js).
+- **Recolor everything**: edit the CSS variables at the top of [`src/css/theme.css`](src/css/theme.css).
+- **Update a link**: edit [`src/js/links.js`](src/js/links.js). Set `status: "live"` and a real `url` to remove the "PENDING" badge.
+- **Adjust scroll-rotation speed**: search for `scrub` in [`src/js/app.js`](src/js/app.js) (lower = snappier).
+- **Tweak steam frequency**: search `scheduleSteamForStack` in [`src/js/app.js`](src/js/app.js).
+- **Tweak steam look**: edit dye/splat settings in [`src/js/fluid-steam.js`](src/js/fluid-steam.js).
+- **Tweak steam pressure / rise speed**: adjust `STEAM_PRESSURE` (0–1) at the top of [`fluid-steam.js`](src/js/fluid-steam.js).

@@ -1,5 +1,5 @@
 // WebGL steam overlay — wraps MIT fluid sim for smokestack bursts
-import { createFluidSimulation } from "./lib/fluid/fluid-sim.js";
+import { createFluidSimulation } from "../lib/fluid/fluid-sim.js";
 
 const STEAM_DYE = { r: 0.42, g: 0.4, b: 0.36 };
 const STEAM_DYE_LIGHT = { r: 0.55, g: 0.52, b: 0.46 };
