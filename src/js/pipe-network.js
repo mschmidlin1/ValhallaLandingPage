@@ -1,7 +1,8 @@
 // Bronze pipe network — page-spanning SVG.
 //   • Horizontal manifold across the gauge hub.
 //   • Risers run straight up behind each gauge (no visible joint hardware).
-//   • Two vertical drop pipes that elbow off the manifold and run to the page bottom.
+//   • Two vertical drop pipes meet the manifold at sharp 45°-mitered corners
+//     and run to the page bottom.
 // All coordinates are in document space so the SVG can be sized to the full page.
 
 const NS = "http://www.w3.org/2000/svg";
@@ -10,9 +11,6 @@ const MAIN_RADIUS = 46;
 const RISER_RADIUS = 30;
 const GAUGE_PAD = 18;
 const PIPE_END_MARGIN = 24;
-const ELBOW_BEND_SCALE = 1.4; // bend radius = pipeR * this
-const ELBOW_SEGMENTS = 28;    // sub-segments per 90° bend (more = less visible seams)
-const ELBOW_OVERLAP = 0.08;   // fractional overlap between adjacent segments
 const CORNER_EDGE_MARGIN = 24; // px gap between the corner and the cog column
 // How far the riser sinks into the main pipe so the joint reads as welded
 // rather than glued-on. Up to the centerline minus a hair so the saddle
@@ -154,80 +152,15 @@ function appendStraightPipe(parent, defs, p0, p1, radius) {
   strokeSegment(parent, defs, p0, p1, radius);
 }
 
-/* ---------- 90° elbow (tessellated arc with smoothing overlays) -------- */
-
-// Walk the quarter-arc as many short straight segments. Each segment uses
-// the same cylindrical gradient as straight pipe, so the bright specular
-// band rotates smoothly with the bend (matches the rest of the network).
-//
-// The "strip" look from the early version is suppressed three ways:
-//   1. ELBOW_SEGMENTS is large enough that the angular step is small (~3°).
-//   2. stroke-linecap: round + segment-to-segment overlap hides the seams.
-//   3. A single continuous outline arc and highlight arc are drawn under
-//      and over the segments, giving a perfectly smooth outer silhouette.
-function appendElbow(parent, defs, corner, dirIn, dirOut, pipeR, bendR) {
-  const tangentIn  = { x: corner.x - dirIn.x  * bendR, y: corner.y - dirIn.y  * bendR };
-  const tangentOut = { x: corner.x + dirOut.x * bendR, y: corner.y + dirOut.y * bendR };
-  const cross = dirIn.x * dirOut.y - dirIn.y * dirOut.x;
-  const inward = { x: -dirIn.y * Math.sign(cross), y: dirIn.x * Math.sign(cross) };
-  const center = { x: tangentIn.x + inward.x * bendR, y: tangentIn.y + inward.y * bendR };
-
-  const a0 = Math.atan2(tangentIn.y  - center.y, tangentIn.x  - center.x);
-  const a1 = Math.atan2(tangentOut.y - center.y, tangentOut.x - center.x);
-  let delta = a1 - a0;
-  while (delta >  Math.PI) delta -= 2 * Math.PI;
-  while (delta < -Math.PI) delta += 2 * Math.PI;
-
-  const dia = pipeR * 2;
-  const sweep = cross > 0 ? 1 : 0;
-  const arcD = `M ${tangentIn.x} ${tangentIn.y} A ${bendR} ${bendR} 0 0 ${sweep} ${tangentOut.x} ${tangentOut.y}`;
-
-  // 1. Single continuous dark outline arc — smooth outer silhouette.
-  parent.appendChild(el("path", {
-    d: arcD,
-    fill: "none",
-    stroke: "#1a0c06",
-    "stroke-width": dia + 2,
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
+// Polygonal clipPath; used to cut pipe ends at 45° for mitered corners.
+function addClipPath(defs, points) {
+  const id = `gp-clip-${++gradCounter}`;
+  const clip = el("clipPath", { id });
+  clip.appendChild(el("polygon", {
+    points: points.map((p) => `${p.x},${p.y}`).join(" "),
   }));
-
-  // 2. Tessellated cylinder gradient — each short segment carries the bronze
-  //    cross-section, slightly overlapping the next to hide the joins.
-  const arcPt = (a) => ({ x: center.x + Math.cos(a) * bendR, y: center.y + Math.sin(a) * bendR });
-  const step = delta / ELBOW_SEGMENTS;
-  const overlap = step * ELBOW_OVERLAP;
-  for (let i = 0; i < ELBOW_SEGMENTS; i++) {
-    const sa = a0 + step * i - overlap;
-    const ea = a0 + step * (i + 1) + overlap;
-    const p0 = arcPt(sa);
-    const p1 = arcPt(ea);
-    const gradId = addCylinderGradient(defs, p0, p1, pipeR);
-    parent.appendChild(el("path", {
-      d: `M ${p0.x} ${p0.y} L ${p1.x} ${p1.y}`,
-      fill: "none",
-      stroke: `url(#${gradId})`,
-      "stroke-width": dia,
-      "stroke-linecap": "round",
-      "stroke-linejoin": "round",
-    }));
-  }
-
-  // 3. Single continuous specular highlight arc on the convex outer face
-  //    so the bronze sheen reads as one uniform curve, not stacked strips.
-  const hlR = bendR + pipeR * 0.38 * (cross > 0 ? -1 : 1);
-  const innerR = Math.abs(hlR);
-  const hl0 = { x: center.x + Math.cos(a0) * innerR, y: center.y + Math.sin(a0) * innerR };
-  const hl1 = { x: center.x + Math.cos(a1) * innerR, y: center.y + Math.sin(a1) * innerR };
-  parent.appendChild(el("path", {
-    d: `M ${hl0.x} ${hl0.y} A ${innerR} ${innerR} 0 0 ${sweep} ${hl1.x} ${hl1.y}`,
-    fill: "none",
-    stroke: "rgba(255, 235, 200, 0.42)",
-    "stroke-width": Math.max(2.5, pipeR * 0.16),
-    "stroke-linecap": "round",
-  }));
-
-  return { tangentIn, tangentOut };
+  defs.appendChild(clip);
+  return id;
 }
 
 /* ---------- Base anchor flanges (vertical drop feet only) ------------- */
@@ -377,17 +310,31 @@ function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
 
   const leftCorner  = { x: minX, y: manifoldY };
   const rightCorner = { x: maxX, y: manifoldY };
-  const bendR = MAIN_RADIUS * ELBOW_BEND_SCALE;
 
-  // Horizontal main runs between the elbow tangent points (not all the way
-  // into the curve, so the bend reads as a single swept fitting).
-  const mainLeftEnd  = { x: leftCorner.x  + bendR, y: manifoldY };
-  const mainRightEnd = { x: rightCorner.x - bendR, y: manifoldY };
-  appendStraightPipe(pipes, defs, mainLeftEnd, mainRightEnd, MAIN_RADIUS);
+  const R = MAIN_RADIUS;
+  const dropEndY = docHeight - PIPE_END_MARGIN;
+
+  // Horizontal main: trapezoid clip cuts both ends at 45° so the drops can
+  // butt up flush. Centerline extends R past each corner so the stroke
+  // rectangle fully contains the mitered polygon before clipping.
+  const mainClip = addClipPath(defs, [
+    { x: leftCorner.x  - R, y: manifoldY - R },
+    { x: rightCorner.x + R, y: manifoldY - R },
+    { x: rightCorner.x - R, y: manifoldY + R },
+    { x: leftCorner.x  + R, y: manifoldY + R },
+  ]);
+  const mainG = el("g", { "clip-path": `url(#${mainClip})` });
+  strokeSegment(
+    mainG, defs,
+    { x: leftCorner.x  - R, y: manifoldY },
+    { x: rightCorner.x + R, y: manifoldY },
+    R,
+  );
+  pipes.appendChild(mainG);
 
   // Risers: plain pipe from the top of the main manifold up behind each
   // gauge (no flanges — the dial hides where the pipe meets the fitting).
-  const mainTopY = manifoldY - MAIN_RADIUS;
+  const mainTopY = manifoldY - R;
   anchors.forEach((anchor, idx) => {
     const obstacles = measureGaugeObstacles(hubEl, origin, idx);
     const riserX = resolveRiserX(anchor.x, mainTopY, anchor.riserTopY, obstacles);
@@ -406,26 +353,39 @@ function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
     }
   });
 
-  // 90° elbows + vertical drops down to the bottom of the page.
-  const dropEndY = docHeight - PIPE_END_MARGIN;
-
-  appendElbow(pipes, defs, leftCorner, { x: -1, y: 0 }, { x: 0, y: 1 }, MAIN_RADIUS, bendR);
-  appendStraightPipe(
-    pipes, defs,
-    { x: leftCorner.x, y: leftCorner.y + bendR },
+  // Left drop: 45° miter at top against the horizontal main.
+  const leftDropClip = addClipPath(defs, [
+    { x: leftCorner.x - R, y: leftCorner.y - R },
+    { x: leftCorner.x + R, y: leftCorner.y + R },
+    { x: leftCorner.x + R, y: dropEndY },
+    { x: leftCorner.x - R, y: dropEndY },
+  ]);
+  const leftDropG = el("g", { "clip-path": `url(#${leftDropClip})` });
+  strokeSegment(
+    leftDropG, defs,
+    { x: leftCorner.x, y: leftCorner.y - R },
     { x: leftCorner.x, y: dropEndY },
-    MAIN_RADIUS,
+    R,
   );
-  appendAnchorFlange(fittings, leftCorner.x, dropEndY, MAIN_RADIUS);
+  pipes.appendChild(leftDropG);
+  appendAnchorFlange(fittings, leftCorner.x, dropEndY, R);
 
-  appendElbow(pipes, defs, rightCorner, { x: 1, y: 0 }, { x: 0, y: 1 }, MAIN_RADIUS, bendR);
-  appendStraightPipe(
-    pipes, defs,
-    { x: rightCorner.x, y: rightCorner.y + bendR },
+  // Right drop: mirrored miter.
+  const rightDropClip = addClipPath(defs, [
+    { x: rightCorner.x - R, y: rightCorner.y + R },
+    { x: rightCorner.x + R, y: rightCorner.y - R },
+    { x: rightCorner.x + R, y: dropEndY },
+    { x: rightCorner.x - R, y: dropEndY },
+  ]);
+  const rightDropG = el("g", { "clip-path": `url(#${rightDropClip})` });
+  strokeSegment(
+    rightDropG, defs,
+    { x: rightCorner.x, y: rightCorner.y - R },
     { x: rightCorner.x, y: dropEndY },
-    MAIN_RADIUS,
+    R,
   );
-  appendAnchorFlange(fittings, rightCorner.x, dropEndY, MAIN_RADIUS);
+  pipes.appendChild(rightDropG);
+  appendAnchorFlange(fittings, rightCorner.x, dropEndY, R);
 
   return [pipes, fittings];
 }
