@@ -1470,7 +1470,7 @@ function readingToAngle(reading) {
 
 function attachGaugeHover(gaugeEl, needleEl) {
   const state = { angle: GAUGE_REST_ANGLE };
-  let hoverTimeline = null;
+  let activeTween = null;
 
   const setNeedleAngle = (angle) => {
     state.angle = angle;
@@ -1481,44 +1481,27 @@ function attachGaugeHover(gaugeEl, needleEl) {
   setNeedleAngle(GAUGE_REST_ANGLE);
 
   gaugeEl.addEventListener("mouseenter", () => {
-    if (hoverTimeline) hoverTimeline.kill();
+    if (activeTween) activeTween.kill();
 
     gaugeEl.classList.add("is-hovered");
     const targetAngle = readingToAngle(20 + Math.random() * 80);
 
-    if (reducedMotion) {
-      gsap.to(state, {
-        angle: targetAngle,
-        duration: 0.15,
-        ease: "none",
-        onUpdate: () => setNeedleAngle(state.angle),
-      });
-      return;
-    }
-
-    hoverTimeline = gsap.timeline({ onUpdate: () => setNeedleAngle(state.angle) });
-    hoverTimeline.to(state, {
+    activeTween = gsap.to(state, {
       angle: targetAngle,
-      duration: 1.1,
-      ease: "elastic.out(1, 0.45)",
-    });
-    hoverTimeline.to(state, {
-      angle: targetAngle + 2,
-      duration: 0.08,
-      ease: "sine.inOut",
-      yoyo: true,
-      repeat: 3,
+      duration: reducedMotion ? 0.15 : 1.1,
+      ease: reducedMotion ? "none" : "elastic.out(1, 0.45)",
+      onUpdate: () => setNeedleAngle(state.angle),
     });
   });
 
   gaugeEl.addEventListener("mouseleave", () => {
-    if (hoverTimeline) {
-      hoverTimeline.kill();
-      hoverTimeline = null;
+    if (activeTween) {
+      activeTween.kill();
+      activeTween = null;
     }
 
     gaugeEl.classList.remove("is-hovered");
-    gsap.to(state, {
+    activeTween = gsap.to(state, {
       angle: GAUGE_REST_ANGLE,
       duration: reducedMotion ? 0.15 : 0.45,
       ease: reducedMotion ? "none" : "power2.out",
