@@ -89,26 +89,6 @@ a:hover { color: var(--gold-light); }
   background: linear-gradient(90deg, transparent 0%, var(--brass) 30%, var(--gold) 50%, var(--brass) 70%, transparent 100%);
 }
 
-/* Coming-soon styling - applied to tool links without a real URL yet */
-[data-status="coming-soon"] {
-  position: relative;
-}
-[data-status="coming-soon"]::after {
-  content: "PENDING";
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.18em;
-  color: var(--ember);
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--copper-dark);
-  padding: 2px 6px;
-  border-radius: 2px;
-  pointer-events: none;
-}
-
 /* Reusable text helpers */
 .t-mono { font-family: var(--font-mono); }
 .t-display { font-family: var(--font-display); letter-spacing: 0.1em; }

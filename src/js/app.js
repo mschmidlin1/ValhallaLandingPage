@@ -1519,6 +1519,8 @@ VALHALLA_LINKS.forEach((link) => {
   if (link.status === "live") {
     a.target = "_blank";
     a.rel = "noopener noreferrer";
+  } else {
+    a.addEventListener("click", (e) => e.preventDefault());
   }
 
   a.innerHTML = `

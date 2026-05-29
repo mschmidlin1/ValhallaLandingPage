@@ -1,8 +1,8 @@
 // Valhalla shared link data - single source of truth for the landing page.
 // Update a URL here once and the page picks it up.
 //
-// `status` controls the small "PENDING" badge styling (see theme.css).
-// When a real URL is ready, change `url` and set `status: "live"`.
+// `status` is `"live"` for external links or `"coming-soon"` for placeholders
+// (coming-soon gauges look the same but do not navigate).
 
 export const VALHALLA_LINKS = [
   {

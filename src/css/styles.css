@@ -176,10 +176,6 @@ body {
   pointer-events: none;
 }
 
-.gauge[data-status="coming-soon"] .gauge-face {
-  filter: grayscale(0.4) brightness(0.85);
-}
-
 /* --- Smokestacks ------------------------------------------------------- */
 .smokestacks {
   position: fixed;
