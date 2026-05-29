@@ -1460,6 +1460,73 @@ document.querySelectorAll(".stack").forEach((stack) => {
 */
 
 /* ---------- Pressure-gauge tool cards --------------------------------- */
+const GAUGE_ANGLE_MIN = -130;
+const GAUGE_ANGLE_MAX = 130;
+const GAUGE_REST_ANGLE = GAUGE_ANGLE_MIN;
+
+function readingToAngle(reading) {
+  return GAUGE_ANGLE_MIN + (reading / 100) * (GAUGE_ANGLE_MAX - GAUGE_ANGLE_MIN);
+}
+
+function attachGaugeHover(gaugeEl, needleEl) {
+  const state = { angle: GAUGE_REST_ANGLE };
+  let hoverTimeline = null;
+
+  const setNeedleAngle = (angle) => {
+    state.angle = angle;
+    needleEl.style.transform = `rotate(${angle}deg)`;
+  };
+
+  needleEl.removeAttribute("transform");
+  setNeedleAngle(GAUGE_REST_ANGLE);
+
+  gaugeEl.addEventListener("mouseenter", () => {
+    if (hoverTimeline) hoverTimeline.kill();
+
+    gaugeEl.classList.add("is-hovered");
+    const targetAngle = readingToAngle(20 + Math.random() * 80);
+
+    if (reducedMotion) {
+      gsap.to(state, {
+        angle: targetAngle,
+        duration: 0.15,
+        ease: "none",
+        onUpdate: () => setNeedleAngle(state.angle),
+      });
+      return;
+    }
+
+    hoverTimeline = gsap.timeline({ onUpdate: () => setNeedleAngle(state.angle) });
+    hoverTimeline.to(state, {
+      angle: targetAngle,
+      duration: 1.1,
+      ease: "elastic.out(1, 0.45)",
+    });
+    hoverTimeline.to(state, {
+      angle: targetAngle + 2,
+      duration: 0.08,
+      ease: "sine.inOut",
+      yoyo: true,
+      repeat: 3,
+    });
+  });
+
+  gaugeEl.addEventListener("mouseleave", () => {
+    if (hoverTimeline) {
+      hoverTimeline.kill();
+      hoverTimeline = null;
+    }
+
+    gaugeEl.classList.remove("is-hovered");
+    gsap.to(state, {
+      angle: GAUGE_REST_ANGLE,
+      duration: reducedMotion ? 0.15 : 0.45,
+      ease: reducedMotion ? "none" : "power2.out",
+      onUpdate: () => setNeedleAngle(state.angle),
+    });
+  });
+}
+
 const gaugesContainer = document.getElementById("gauges");
 VALHALLA_LINKS.forEach((link) => {
   const a = document.createElement("a");
@@ -1491,12 +1558,12 @@ VALHALLA_LINKS.forEach((link) => {
           <circle cx="100" cy="100" r="6" fill="#1a120a" stroke="#d4af37" stroke-width="2"/>
         </g>
       </svg>
+      <span class="gauge-rim-glow" aria-hidden="true"></span>
       <span class="gauge-glyph">${link.title}</span>
     </div>
   `;
 
-  const needle = a.querySelector(".gauge-needle");
-  needle.style.transform = `rotate(${-40 + Math.random() * 60}deg)`;
+  attachGaugeHover(a, a.querySelector(".gauge-needle"));
   gaugesContainer.appendChild(a);
 });
 
