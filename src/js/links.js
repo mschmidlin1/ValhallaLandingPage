@@ -12,7 +12,6 @@ export const VALHALLA_LINKS = [
     description: "Personal website and project showcase",
     url: "https://michaelschmidlin.com",
     status: "live",
-    glyph: "P",
   },
   {
     id: "trendline",
@@ -21,7 +20,6 @@ export const VALHALLA_LINKS = [
     description: "Real-time market trend analysis",
     url: "#",
     status: "coming-soon",
-    glyph: "T",
   },
   {
     id: "resume",
@@ -30,7 +28,6 @@ export const VALHALLA_LINKS = [
     description: "AI-assisted resume tuning",
     url: "#",
     status: "coming-soon",
-    glyph: "R",
   },
   {
     id: "budget",
@@ -39,7 +36,6 @@ export const VALHALLA_LINKS = [
     description: "Personal finance dashboard",
     url: "#",
     status: "coming-soon",
-    glyph: "B",
   },
 ];
 

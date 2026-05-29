@@ -1491,10 +1491,8 @@ VALHALLA_LINKS.forEach((link) => {
           <circle cx="100" cy="100" r="6" fill="#1a120a" stroke="#d4af37" stroke-width="2"/>
         </g>
       </svg>
-      <span class="gauge-glyph">${link.glyph}</span>
+      <span class="gauge-glyph">${link.title}</span>
     </div>
-    <div class="gauge-label">${link.title}</div>
-    <div class="gauge-sublabel">${link.subtitle}</div>
   `;
 
   const needle = a.querySelector(".gauge-needle");
