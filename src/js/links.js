@@ -3,6 +3,12 @@
 //
 // `status` is `"live"` for external links or `"coming-soon"` for placeholders
 // (coming-soon gauges look the same but do not navigate).
+// Placeholder URLs (`#` or empty) show the coming-soon banner on click.
+
+export function hasNavigableUrl(link) {
+  const url = (link?.url ?? "").trim();
+  return url.length > 0 && url !== "#" && !url.startsWith("#");
+}
 
 export const VALHALLA_LINKS = [
   {

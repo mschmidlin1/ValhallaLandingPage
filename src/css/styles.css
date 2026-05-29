@@ -530,6 +530,71 @@ body {
   letter-spacing: 0.2em;
 }
 
+/* --- Coming-soon status plaque (gauge click, no URL) ------------------- */
+.coming-soon-banner {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 28px 16px;
+  min-width: 280px;
+  max-width: calc(100vw - 48px);
+  text-align: center;
+  color: var(--text-primary);
+  background:
+    radial-gradient(ellipse at 50% 0%, #2a2218 0%, transparent 55%),
+    #1a120a;
+  border: 1px solid var(--brass-dark);
+  border-radius: var(--plaque-radius);
+  box-shadow: var(--shadow-deep), var(--shadow-brass);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 16px);
+  transition: opacity 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+}
+.coming-soon-banner.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+  box-shadow: var(--shadow-deep), var(--shadow-brass), 0 0 20px rgba(255, 122, 24, 0.12);
+}
+.coming-soon-banner[hidden] {
+  display: none;
+}
+.coming-soon-banner__label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+}
+.coming-soon-banner__message {
+  font-size: 1rem;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+.coming-soon-banner::after {
+  content: "";
+  display: block;
+  width: 70%;
+  height: 2px;
+  margin-top: 8px;
+  background: linear-gradient(90deg, transparent, var(--brass), var(--gold), var(--brass), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coming-soon-banner {
+    transform: translate(-50%, 0);
+    transition: opacity 0.15s ease, box-shadow 0.15s ease;
+  }
+  .coming-soon-banner.is-visible {
+    transform: translate(-50%, 0);
+  }
+}
+
 @media (max-width: 900px) {
   body {
     --cog-column-width: 180px;

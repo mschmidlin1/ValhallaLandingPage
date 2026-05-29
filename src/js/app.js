@@ -4,7 +4,7 @@
 // - Brass pressure-gauge tool cards from links.js
 // - Procedural smokestacks with WebGL fluid steam bursts
 
-import { VALHALLA_LINKS } from "./links.js";
+import { VALHALLA_LINKS, hasNavigableUrl } from "./links.js";
 import { createFluidSteam } from "./fluid-steam.js?v=19";
 import { attachGaugePipeNetwork, buildGaugePipeNetwork } from "./pipe-network.js?v=29";
 
@@ -1510,17 +1510,47 @@ function attachGaugeHover(gaugeEl, needleEl) {
   });
 }
 
+const comingSoonBanner = document.getElementById("coming-soon-banner");
+let comingSoonHideTimer = null;
+
+function showComingSoonBanner() {
+  if (!comingSoonBanner) return;
+
+  if (comingSoonHideTimer) {
+    clearTimeout(comingSoonHideTimer);
+    comingSoonHideTimer = null;
+  }
+
+  comingSoonBanner.hidden = false;
+  requestAnimationFrame(() => {
+    comingSoonBanner.classList.add("is-visible");
+  });
+
+  comingSoonHideTimer = setTimeout(() => {
+    comingSoonBanner.classList.remove("is-visible");
+    comingSoonHideTimer = setTimeout(() => {
+      comingSoonBanner.hidden = true;
+      comingSoonHideTimer = null;
+    }, reducedMotion ? 0 : 350);
+  }, 3000);
+}
+
 const gaugesContainer = document.getElementById("gauges");
 VALHALLA_LINKS.forEach((link) => {
   const a = document.createElement("a");
   a.className = "gauge";
-  a.href = link.url;
   a.dataset.status = link.status;
-  if (link.status === "live") {
+
+  if (hasNavigableUrl(link)) {
+    a.href = link.url;
     a.target = "_blank";
     a.rel = "noopener noreferrer";
   } else {
-    a.addEventListener("click", (e) => e.preventDefault());
+    a.href = "#";
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      showComingSoonBanner();
+    });
   }
 
   a.innerHTML = `
