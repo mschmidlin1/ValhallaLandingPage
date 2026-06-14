@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: valhallalandingpage
+  namespace: valhallalandingpage
+  annotations:
+    tailscale.com/funnel: "true"
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: valhallalandingpage
+      port:
+        number: 80
+  tls:
+    - hosts:
+        - valhalla

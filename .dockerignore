@@ -1,0 +1,10 @@
+.git
+.github
+.vscode
+k8s
+README.md
+.gitignore
+.dockerignore
+Dockerfile
+inspiration_photos
+.serve-pids.txt

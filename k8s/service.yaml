@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: valhallalandingpage
+  namespace: valhallalandingpage
+spec:
+  type: ClusterIP
+  selector:
+    app: valhallalandingpage
+  ports:
+    - port: 80
+      targetPort: 80
