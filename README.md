@@ -28,6 +28,16 @@ Workspace settings in [`.vscode/settings.json`](.vscode/settings.json) pin the s
 
 ---
 
+## Self-hosting
+
+This site auto-deploys to a home server on every push to `main`.
+
+- [Self-Hosting.md](docs/Self-Hosting.md) — how the full pipeline works (start here)
+- [KubernetesSetup.md](docs/KubernetesSetup.md) — setup and operations guide
+- [DockerSetup.md](docs/DockerSetup.md) — Docker playbook for static sites
+
+---
+
 ## The Engine Room
 
 **Lead:** inline SVG + GSAP ScrollTrigger.
