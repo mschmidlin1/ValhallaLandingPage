@@ -17,6 +17,18 @@ const CORNER_EDGE_MARGIN = 24; // px gap between the corner and the cog column
 // gradient blends into the top of the main pipe.
 const RISER_MAIN_OVERLAP = 10;
 
+// Steam valves: red handwheels on the vertical drop pipes.
+const VALVE_WHEEL_RATIO = 1.5; // wheel radius relative to main pipe radius
+const VALVE_VENT_RATIO = 0.32; // vent-stub radius relative to main pipe radius
+// Two valves per drop. The top valve sits a fixed distance below the manifold
+// bar (so it's visible with little scrolling); the bottom valve is a fraction
+// of the drop length. Left and right use different values so the four valves
+// are staggered rather than mirror-symmetric.
+const VALVE_TOP_OFFSET_LEFT = 130;   // px below the manifold corner
+const VALVE_TOP_OFFSET_RIGHT = 250;
+const VALVE_BOTTOM_FRAC_LEFT = 0.55; // fraction of the drop span
+const VALVE_BOTTOM_FRAC_RIGHT = 0.68;
+
 let resizeObserver = null;
 let windowResizeBound = false;
 let gradCounter = 0;
@@ -66,6 +78,31 @@ function ensureDefs(defs) {
     <feDropShadow dx="3" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.55"/>
   `;
   defs.appendChild(shadowFilter);
+
+  // Glossy red enamel for the valve handwheels. objectBoundingBox units so a
+  // single gradient def serves every wheel regardless of its position.
+  const valveRed = el("radialGradient", { id: "gp-valve-red", cx: "36%", cy: "30%", r: "78%" });
+  [
+    ["0%", "#ff8a78"],
+    ["32%", "#ef3b2a"],
+    ["68%", "#bc1d12"],
+    ["100%", "#5e0c06"],
+  ].forEach(([offset, color]) => {
+    valveRed.appendChild(el("stop", { offset, "stop-color": color }));
+  });
+  defs.appendChild(valveRed);
+
+  // Chromed/steel center hub nut.
+  const valveHub = el("radialGradient", { id: "gp-valve-hub", cx: "35%", cy: "28%", r: "80%" });
+  [
+    ["0%", "#ffffff"],
+    ["30%", "#dadada"],
+    ["64%", "#8c8c8c"],
+    ["100%", "#343434"],
+  ].forEach(([offset, color]) => {
+    valveHub.appendChild(el("stop", { offset, "stop-color": color }));
+  });
+  defs.appendChild(valveHub);
 }
 
 /* ---------- Geometry helpers ------------------------------------------ */
@@ -207,6 +244,158 @@ function appendAnchorFlange(parent, cx, cy, pipeR) {
   parent.appendChild(g);
 }
 
+/* ---------- Steam valves (handwheels + side vents) -------------------- */
+
+// Red handwheel as its own rotatable <g> (GSAP spins it via svgOrigin cx/cy).
+// Ring + four diagonal spokes (X) + chromed hub nut, matching the reference.
+function buildValveWheel(cx, cy, wheelR, idx) {
+  const g = el("g", {
+    class: "valve-wheel",
+    "data-valve-idx": idx,
+    "data-cx": cx,
+    "data-cy": cy,
+  });
+  const ringW = wheelR * 0.26;
+  const spokeW = wheelR * 0.16;
+  const spokeAngles = [0, 1, 2, 3].map((i) => i * (Math.PI / 2) + Math.PI / 4);
+
+  // Dark base (rim + spokes) for depth, drawn slightly fatter underneath.
+  spokeAngles.forEach((a) => {
+    g.appendChild(el("line", {
+      x1: cx, y1: cy,
+      x2: cx + Math.cos(a) * wheelR,
+      y2: cy + Math.sin(a) * wheelR,
+      stroke: "#360704",
+      "stroke-width": spokeW + 4,
+      "stroke-linecap": "round",
+    }));
+  });
+  g.appendChild(el("circle", {
+    cx, cy, r: wheelR,
+    fill: "none",
+    stroke: "#360704",
+    "stroke-width": ringW + 4,
+  }));
+
+  // Enamelled red spokes + rim.
+  spokeAngles.forEach((a) => {
+    g.appendChild(el("line", {
+      x1: cx, y1: cy,
+      x2: cx + Math.cos(a) * wheelR,
+      y2: cy + Math.sin(a) * wheelR,
+      stroke: "url(#gp-valve-red)",
+      "stroke-width": spokeW,
+      "stroke-linecap": "round",
+    }));
+  });
+  g.appendChild(el("circle", {
+    cx, cy, r: wheelR,
+    fill: "none",
+    stroke: "url(#gp-valve-red)",
+    "stroke-width": ringW,
+  }));
+  // Soft top highlight on the rim torus.
+  g.appendChild(el("circle", {
+    cx, cy, r: wheelR - ringW * 0.18,
+    fill: "none",
+    stroke: "#ff9c8c",
+    "stroke-width": ringW * 0.26,
+    opacity: 0.45,
+  }));
+
+  // Chromed center hub + hex nut.
+  g.appendChild(el("circle", {
+    cx, cy, r: wheelR * 0.3,
+    fill: "url(#gp-valve-hub)",
+    stroke: "#262626",
+    "stroke-width": 2,
+  }));
+  const nutR = wheelR * 0.18;
+  const nutPts = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+    nutPts.push(`${cx + Math.cos(a) * nutR},${cy + Math.sin(a) * nutR}`);
+  }
+  g.appendChild(el("polygon", {
+    points: nutPts.join(" "),
+    fill: "url(#gp-valve-hub)",
+    stroke: "#1c1c1c",
+    "stroke-width": 1.5,
+  }));
+  g.appendChild(el("circle", { cx, cy, r: wheelR * 0.06, fill: "#2a2a2a" }));
+
+  return g;
+}
+
+// Full valve: side vent flange (behind), brass bonnet on the pipe, red wheel
+// on top, and an invisible steam-origin marker at the vent mouth.
+// dirSign: +1 = vent to the right of the pipe, -1 = to the left.
+function appendValve(parent, defs, cx, cy, pipeR, dirSign, idx) {
+  const wheelR = pipeR * VALVE_WHEEL_RATIO;
+  const ventR = pipeR * VALVE_VENT_RATIO;
+  const g = el("g", { class: "valve", "data-valve-idx": idx });
+
+  // Vent flange — a short brass stub poking out the side, mouth just past the
+  // wheel rim so steam reads as escaping from behind the wheel.
+  const mouthX = cx + dirSign * (wheelR + ventR * 0.5);
+  strokeSegment(
+    g, defs,
+    { x: cx + dirSign * pipeR * 0.4, y: cy },
+    { x: mouthX, y: cy },
+    ventR,
+  );
+  g.appendChild(el("ellipse", {
+    cx: mouthX, cy,
+    rx: ventR * 0.5, ry: ventR * 1.35,
+    fill: "url(#gp-bronze-collar)",
+    stroke: "#1a0c06",
+    "stroke-width": 2,
+  }));
+  g.appendChild(el("ellipse", {
+    cx: mouthX + dirSign * ventR * 0.16, cy,
+    rx: ventR * 0.26, ry: ventR * 1.0,
+    fill: "#0a0503",
+  }));
+
+  // Brass bonnet/valve body disc on the pipe, behind the wheel.
+  g.appendChild(el("circle", {
+    cx, cy, r: pipeR * 1.08,
+    fill: "url(#gp-bronze-collar)",
+    stroke: "#1a0c06",
+    "stroke-width": 2.5,
+  }));
+  const boltCount = 10;
+  for (let i = 0; i < boltCount; i++) {
+    const a = (i / boltCount) * Math.PI * 2;
+    g.appendChild(el("circle", {
+      cx: cx + Math.cos(a) * pipeR * 0.9,
+      cy: cy + Math.sin(a) * pipeR * 0.9,
+      r: 2.4,
+      fill: "#120906",
+      stroke: "#5a3a1e",
+      "stroke-width": "0.7",
+    }));
+  }
+
+  // Red handwheel.
+  g.appendChild(buildValveWheel(cx, cy, wheelR, idx));
+
+  // Invisible steam-origin marker at the vent mouth. data-steam-dir carries the
+  // screen-space horizontal sign the fluid engine pushes the jet along.
+  g.appendChild(el("circle", {
+    class: "valve-vent",
+    "data-steam-dir": dirSign,
+    "data-valve-idx": idx,
+    cx: mouthX + dirSign * ventR * 0.4,
+    cy,
+    r: 1,
+    fill: "none",
+    "pointer-events": "none",
+  }));
+
+  parent.appendChild(g);
+}
+
 /* ---------- Measurement (gauge anchors → document coordinates) -------- */
 
 // Document-space offset of the SVG layer. Anchors and the manifold are
@@ -288,6 +477,7 @@ function computeManifoldY(hubBox, anchors) {
 function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
   const pipes    = el("g", { class: "network-layer gp-pipes",    filter: "url(#gp-pipe-shadow)" });
   const fittings = el("g", { class: "network-layer gp-fittings" });
+  const valves   = el("g", { class: "network-layer gp-valves",   filter: "url(#gp-pipe-shadow)" });
 
   const origin = getSvgOriginDoc(document.getElementById("gauge-pipe-network"));
 
@@ -387,7 +577,20 @@ function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
   pipes.appendChild(rightDropG);
   appendAnchorFlange(fittings, rightCorner.x, dropEndY, R);
 
-  return [pipes, fittings];
+  // Steam valves: two per vertical drop, staggered between sides. Alternate the
+  // vent direction so the jets are mixed (inward toward center / outward toward
+  // the edges). Left drop: inward is +1 (toward page center); right drop: -1.
+  const dropSpan = dropEndY - manifoldY;
+  const leftValveYs = [manifoldY + VALVE_TOP_OFFSET_LEFT, manifoldY + dropSpan * VALVE_BOTTOM_FRAC_LEFT];
+  const rightValveYs = [manifoldY + VALVE_TOP_OFFSET_RIGHT, manifoldY + dropSpan * VALVE_BOTTOM_FRAC_RIGHT];
+  leftValveYs.forEach((vy, i) => {
+    appendValve(valves, defs, leftCorner.x, vy, R, i === 0 ? 1 : -1, i);
+  });
+  rightValveYs.forEach((vy, i) => {
+    appendValve(valves, defs, rightCorner.x, vy, R, i === 0 ? -1 : 1, 2 + i);
+  });
+
+  return [pipes, fittings, valves];
 }
 
 function syncSvgSizeToDoc(svgEl) {

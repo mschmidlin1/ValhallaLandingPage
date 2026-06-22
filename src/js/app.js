@@ -5,8 +5,8 @@
 // - Procedural smokestacks with WebGL fluid steam bursts
 
 import { VALHALLA_LINKS, hasNavigableUrl } from "./links.js";
-import { createFluidSteam } from "./fluid-steam.js?v=19";
-import { attachGaugePipeNetwork, buildGaugePipeNetwork } from "./pipe-network.js?v=29";
+import { createFluidSteam } from "./fluid-steam.js?v=21";
+import { attachGaugePipeNetwork, buildGaugePipeNetwork } from "./pipe-network.js?v=31";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -1588,6 +1588,69 @@ if (gaugesHubEl && gaugePipeSvg) {
   attachGaugePipeNetwork({ hubEl: gaugesHubEl, svgEl: gaugePipeSvg });
 }
 
+/* ---------- Steam valves: turn → vent → turn-back sequence ------------ */
+const steamLayerEl = document.querySelector(".steam-fluid-layer");
+
+const fluidSteam =
+  steamLayerEl && gaugePipeSvg
+    ? createFluidSteam({
+        layer: steamLayerEl,
+        getOriginElements: () => [...gaugePipeSvg.querySelectorAll(".valve-vent")],
+        reducedMotion,
+      })
+    : null;
+
+const valveTimers = [];
+const valveTweens = [];
+
+function clearValveCycles() {
+  while (valveTimers.length) clearTimeout(valveTimers.pop());
+  while (valveTweens.length) valveTweens.pop().kill();
+  if (fluidSteam) fluidSteam.clear();
+}
+
+function scheduleValve(wheel, idx, cx, cy) {
+  const delay = 20000 + Math.random() * 40000; // 20–60s
+  const t = setTimeout(() => runValveCycle(wheel, idx, cx, cy), delay);
+  valveTimers.push(t);
+}
+
+function runValveCycle(wheel, idx, cx, cy) {
+  // Alternate the turn direction per valve for variety; open then close.
+  const openDeg = (idx % 2 === 0 ? 1 : -1) * 150;
+  const origin = `${cx} ${cy}`;
+  const tl = gsap.timeline({
+    onComplete: () => scheduleValve(wheel, idx, cx, cy),
+  });
+  // 1) wheel turns slowly (open)
+  tl.to(wheel, { rotation: openDeg, svgOrigin: origin, duration: 2, ease: "power1.inOut" });
+  // 2) steam issues from the side vent for ~9s
+  tl.call(() => {
+    if (fluidSteam) fluidSteam.burstAtVent(idx, { durationMs: 9000 });
+  });
+  tl.to({}, { duration: 9 });
+  // 3) wheel turns slowly back (close)
+  tl.to(wheel, { rotation: 0, svgOrigin: origin, duration: 2, ease: "power1.inOut" });
+  valveTweens.push(tl);
+}
+
+function setupValves() {
+  if (!gaugePipeSvg) return;
+  const wheels = [...gaugePipeSvg.querySelectorAll(".valve-wheel")];
+  wheels.forEach((wheel, idx) => {
+    const cx = parseFloat(wheel.dataset.cx);
+    const cy = parseFloat(wheel.dataset.cy);
+    gsap.set(wheel, { rotation: 0, svgOrigin: `${cx} ${cy}` });
+    if (reducedMotion) return; // static wheels, no spin, no steam
+    scheduleValve(wheel, idx, cx, cy);
+  });
+}
+
+function initValves() {
+  clearValveCycles();
+  setupValves();
+}
+
 function tickMarks(cx, cy, r, startAngle, endAngle, count, length = 10) {
   let s = "";
   for (let i = 0; i < count; i++) {
@@ -1666,6 +1729,10 @@ requestAnimationFrame(() => {
   ScrollTrigger.refresh();
 });
 
+// The pipe network builds over a couple of animation frames; bind the valves
+// once it has settled so the wheels exist in the DOM.
+setTimeout(initValves, 400);
+
 let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
@@ -1686,6 +1753,9 @@ window.addEventListener("resize", () => {
     */
     if (gaugesHubEl && gaugePipeSvg) {
       buildGaugePipeNetwork({ hubEl: gaugesHubEl, svgEl: gaugePipeSvg });
+      if (fluidSteam) fluidSteam.resize();
+      // Network was rebuilt with fresh valve nodes — rebind the cycles.
+      initValves();
     }
   }, 200);
 });
