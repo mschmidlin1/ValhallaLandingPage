@@ -21,6 +21,7 @@ export function createFluidSteam(opts) {
     return {
       burst() {},
       burstAtStack() {},
+      burstAtVent() {},
       clear() {},
       resize() {},
       destroy() {},
@@ -61,48 +62,69 @@ export function createFluidSteam(opts) {
     activeBursts.length = 0;
   }
 
-  function getOriginsUV() {
+  // Live UV position of a single origin element. Recomputed on demand (and
+  // every frame for active bursts) so the steam source tracks the vent as the
+  // page scrolls. data-steam-dir is the screen-space sign (+1 right, -1 left);
+  // dir 0 falls back to the legacy upward column.
+  function measureOriginUV(el) {
+    if (!el) return null;
     const rect = canvas.getBoundingClientRect();
-    if (rect.width < 1 || rect.height < 1) return [];
-
-    return getOriginElements()
-      .map((el) => {
-        const cap = el.closest(".pipe-cap");
-        const ref = cap ?? el;
-        const o = ref.getBoundingClientRect();
-        const x = (o.left + o.width / 2 - rect.left) / rect.width;
-        const rimY = o.top - 3;
-        const y = 1 - (rimY - rect.top) / rect.height;
-        return { x, y };
-      })
-      .filter(Boolean);
+    if (rect.width < 1 || rect.height < 1) return null;
+    const cap = el.closest(".pipe-cap");
+    const ref = cap ?? el;
+    const o = ref.getBoundingClientRect();
+    const x = (o.left + o.width / 2 - rect.left) / rect.width;
+    const dir = parseFloat(el.dataset?.steamDir ?? "0") || 0;
+    let y;
+    if (dir === 0) {
+      const rimY = o.top - 3;
+      y = 1 - (rimY - rect.top) / rect.height;
+    } else {
+      y = 1 - (o.top + o.height / 2 - rect.top) / rect.height;
+    }
+    return { x, y, dir };
   }
 
-  function splatSteam(uv, phase) {
+  function onScreenUV(uv) {
+    return uv.x >= -0.1 && uv.x <= 1.1 && uv.y >= -0.1 && uv.y <= 1.1;
+  }
+
+  function getOriginsUV() {
+    return getOriginElements().map(measureOriginUV).filter(Boolean);
+  }
+
+  function splatSteam(uv, phase, dir = 0) {
     const p = STEAM_PRESSURE;
     const forceScale = (sim.config.SPLAT_FORCE / 6000) * p;
     let radiusMul = 1;
     let dye = STEAM_DYE;
-    let dx = 0;
-    let dy = 0;
+    let mag = 460 * forceScale;
 
     if (phase === "vent") {
       radiusMul = 0.65;
       dye = { r: STEAM_DYE.r * 0.95, g: STEAM_DYE.g * 0.95, b: STEAM_DYE.b * 0.95 };
-      dx = 0;
-      dy = 400 * forceScale;
+      mag = 420 * forceScale;
     } else if (phase === "main") {
       radiusMul = 1.05;
       dye = STEAM_DYE_LIGHT;
-      dx = 0;
-      dy = 520 * forceScale;
+      mag = 540 * forceScale;
     } else if (phase === "trail") {
       radiusMul = 0.75;
       dye = { r: STEAM_DYE.r * 0.85, g: STEAM_DYE.g * 0.85, b: STEAM_DYE.b * 0.85 };
+      mag = 440 * forceScale;
+    }
+
+    let dx;
+    let dy;
+    if (dir === 0) {
+      // Legacy upward column.
       dx = 0;
-      dy = 440 * forceScale;
+      dy = mag;
     } else {
-      dy = 460 * forceScale;
+      // Side vent: push mostly sideways with a little upward buoyancy so the
+      // jet drifts up as it disperses.
+      dx = dir * mag;
+      dy = mag * 0.28;
     }
 
     const savedRadius = sim.config.SPLAT_RADIUS;
@@ -125,28 +147,39 @@ export function createFluidSteam(opts) {
     return (isMobile() ? 12 : 18) * p;
   }
 
-  /** Deterministic ring above cap rim — avoids random pile-up on one sim cell */
-  function columnUV(mouth, emitIndex, elapsed) {
+  /** Deterministic emission cloud near the mouth — avoids pile-up on one cell.
+   *  For side vents (dir != 0) the cloud is nudged out along the vent axis. */
+  function columnUV(mouth, emitIndex, elapsed, dir = 0) {
     const widen = Math.min(elapsed / 2500, 1);
     const angle = emitIndex * 2.399963;
     const radius = 0.0025 + widen * 0.009;
+    if (dir === 0) {
+      return {
+        x: mouth.x + Math.cos(angle) * radius,
+        y: mouth.y + 0.016 + Math.min(emitIndex * 0.00035, 0.012),
+      };
+    }
     return {
-      x: mouth.x + Math.cos(angle) * radius,
-      y: mouth.y + 0.016 + Math.min(emitIndex * 0.00035, 0.012),
+      x: mouth.x + dir * (0.014 + Math.min(emitIndex * 0.0003, 0.01)) + Math.cos(angle) * radius,
+      y: mouth.y + Math.sin(angle) * radius,
     };
   }
 
-  function releaseSteamAt(stackIndex) {
+  function releaseSteamAt(stackIndex, opts = {}) {
     if (!visible || paused) return;
-    const origins = getOriginsUV();
-    const mouth = origins[stackIndex] ?? origins[0];
+    const els = getOriginElements();
+    const el = els[stackIndex] ?? els[0];
+    const mouth = measureOriginUV(el);
     if (!mouth) return;
-
+    // The origin element is re-measured every frame (see frame callback) so the
+    // jet follows the vent during scroll; we keep a reference here rather than
+    // a frozen UV. Off-screen frames simply skip emission.
     activeBursts.push({
       gen: burstGen,
-      mouth: { x: mouth.x, y: mouth.y },
+      el,
+      mouth: { x: mouth.x, y: mouth.y, dir: mouth.dir ?? 0 },
       start: performance.now(),
-      duration: 16000 + Math.random() * 9000,
+      duration: opts.durationMs ?? (16000 + Math.random() * 9000),
       emitAcc: 0,
       emitIndex: 0,
     });
@@ -168,19 +201,31 @@ export function createFluidSteam(opts) {
         continue;
       }
 
+      // Re-measure the vent each frame so the steam source tracks it on scroll.
+      const live = measureOriginUV(burst.el) || burst.mouth;
+      burst.mouth = live;
+
       const phase = phaseForElapsed(elapsed, burst.duration);
       burst.emitAcc += splatsPerSecond(phase) * dt;
 
       if (burst.emitAcc >= 1) {
         burst.emitAcc -= 1;
         burst.emitIndex += 1;
-        splatSteam(columnUV(burst.mouth, burst.emitIndex, elapsed), phase);
+        if (onScreenUV(live)) {
+          const dir = live.dir ?? 0;
+          splatSteam(columnUV(live, burst.emitIndex, elapsed, dir), phase, dir);
+        }
       }
     }
   });
 
   function burstAtStack(stackIndex = 0) {
     releaseSteamAt(stackIndex);
+  }
+
+  /** Steam burst from a side vent for a bounded duration (default 6s). */
+  function burstAtVent(ventIndex = 0, opts = {}) {
+    releaseSteamAt(ventIndex, { durationMs: opts.durationMs ?? 6000 });
   }
 
   function burst() {
@@ -218,6 +263,7 @@ export function createFluidSteam(opts) {
   return {
     burst,
     burstAtStack,
+    burstAtVent,
     clear,
     resize,
     destroy,
