@@ -1218,9 +1218,20 @@ function populateCogColumn(svgEl, side) {
   return cogs;
 }
 
+const REFERENCE_PAGE_MIN_VH = 250;
+const REFERENCE_BASE_TURNS = 2;
+
+function getPageMinHeightVh() {
+  const raw = getComputedStyle(document.body).getPropertyValue("--page-min-height").trim();
+  const match = /^([\d.]+)vh$/i.exec(raw);
+  return match ? parseFloat(match[1]) : REFERENCE_PAGE_MIN_VH;
+}
+
 function attachCogRotation(cogs) {
   const referenceR = 50;
-  const baseTurns = 2;
+  const pageMinVh = getPageMinHeightVh();
+  const scrollRangeRatio = (pageMinVh - 100) / (REFERENCE_PAGE_MIN_VH - 100);
+  const baseTurns = REFERENCE_BASE_TURNS * scrollRangeRatio;
   cogs.forEach((cog, idx) => {
     const direction = idx % 2 === 0 ? 1 : -1;
     const rotation = direction * baseTurns * 360 * (referenceR / cog.r);

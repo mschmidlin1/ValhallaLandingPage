@@ -18,10 +18,11 @@ body {
     radial-gradient(ellipse at 30% 20%, #2a2620 0%, transparent 60%),
     radial-gradient(ellipse at 80% 90%, #221a14 0%, transparent 55%),
     var(--bg-grey);
+  --page-min-height: 180vh;
   /* position:relative makes body the containing block for .pipe-layer so it
-     can size to the full 250vh document instead of just the viewport. */
+     can size to the full --page-min-height document instead of just the viewport. */
   position: relative;
-  min-height: 250vh;
+  min-height: var(--page-min-height);
   overflow-x: hidden;
 }
 
@@ -64,7 +65,7 @@ body {
 
 /* Page-spanning pipe layer — sits above the cog columns but below the gauges hub
    so the vertical drop pipes can stretch from the manifold all the way to the
-   bottom of the 250vh body. */
+   bottom of the --page-min-height body. */
 .pipe-layer {
   position: absolute;
   inset: 0;
