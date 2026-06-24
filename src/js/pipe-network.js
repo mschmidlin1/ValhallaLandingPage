@@ -8,6 +8,9 @@
 const NS = "http://www.w3.org/2000/svg";
 
 const MAIN_RADIUS = 46;
+const MANIFOLD_BELOW_ANCHOR = MAIN_RADIUS + 52;
+const SINGLE_ROW_TOP_TOLERANCE = 8;
+const SINGLE_ROW_MIN_PADDING_TOP = 48;
 const RISER_RADIUS = 30;
 const GAUGE_PAD = 18;
 const PIPE_END_MARGIN = 24;
@@ -469,7 +472,37 @@ function computeManifoldY(hubBox, anchors) {
   const maxAnchor = anchors.length ? Math.max(...anchors.map((a) => a.y)) : hubBox.top;
   // Main pipe sits below the gauge cluster; risers are plain pipes with no
   // flanges, so we only need enough gap for a short visible riser length.
-  return maxAnchor + MAIN_RADIUS + 52;
+  return maxAnchor + MANIFOLD_BELOW_ANCHOR;
+}
+
+function areGaugesSingleRow(hubEl) {
+  const faces = [...hubEl.querySelectorAll(".gauge-face")];
+  if (faces.length < 2) return false;
+  const tops = faces.map((face) => face.getBoundingClientRect().top);
+  return Math.max(...tops) - Math.min(...tops) < SINGLE_ROW_TOP_TOLERANCE;
+}
+
+function getManifoldOffsetFromGauges(gaugesEl) {
+  const gaugesTop = gaugesEl.getBoundingClientRect().top;
+  const maxAnchor = Math.max(
+    ...[...gaugesEl.querySelectorAll(".gauge-face")].map((face) => face.getBoundingClientRect().bottom - 4),
+  );
+  return maxAnchor - gaugesTop + MANIFOLD_BELOW_ANCHOR;
+}
+
+function applyHubLayout(hubEl) {
+  hubEl.classList.remove("gauges-hub--single-row");
+  hubEl.style.removeProperty("--single-row-padding-top");
+
+  if (!areGaugesSingleRow(hubEl)) return;
+
+  const gaugesEl = hubEl.querySelector(".gauges");
+  if (!gaugesEl) return;
+
+  const offset = getManifoldOffsetFromGauges(gaugesEl);
+  const paddingTop = Math.max(SINGLE_ROW_MIN_PADDING_TOP, window.innerHeight / 2 - offset);
+  hubEl.style.setProperty("--single-row-padding-top", `${paddingTop}px`);
+  hubEl.classList.add("gauges-hub--single-row");
 }
 
 /* ---------- Top-level build ------------------------------------------- */
@@ -620,6 +653,8 @@ function syncSvgSizeToDoc(svgEl) {
 
 export function buildGaugePipeNetwork({ hubEl, svgEl }) {
   if (!hubEl || !svgEl) return;
+
+  applyHubLayout(hubEl);
 
   clearNetwork(svgEl);
   const { w: docWidth, h: docHeight } = syncSvgSizeToDoc(svgEl);

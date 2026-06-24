@@ -63,6 +63,11 @@ body {
   overflow: visible;
 }
 
+.gauges-hub.gauges-hub--single-row {
+  align-items: flex-start;
+  padding-top: var(--single-row-padding-top, 100px);
+}
+
 /* Page-spanning pipe layer — sits above the cog columns but below the gauges hub
    so the vertical drop pipes can stretch from the manifold all the way to the
    bottom of the --page-min-height body. */
