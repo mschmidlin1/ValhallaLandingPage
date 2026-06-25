@@ -99,6 +99,25 @@ function ensureDefs(defs) {
   });
   defs.appendChild(boltCopper);
 
+  // Brushed-steel bolt head seen in side elevation: a bright highlight band
+  // across the upper middle falls off to darker steel at top and bottom. Drawn
+  // vertically so it reads as the flat side of a machined hex head.
+  const boltSteel = el("linearGradient", {
+    id: "gp-bolt-steel",
+    x1: "0%", y1: "0%",
+    x2: "0%", y2: "100%",
+  });
+  [
+    ["0%", "#cfd6dd"],
+    ["28%", "#e8ecf0"],
+    ["52%", "#b8c0c8"],
+    ["78%", "#7c868f"],
+    ["100%", "#444b52"],
+  ].forEach(([offset, color]) => {
+    boltSteel.appendChild(el("stop", { offset, "stop-color": color }));
+  });
+  defs.appendChild(boltSteel);
+
   const shadowFilter = el("filter", {
     id: "gp-pipe-shadow",
     x: "-20%", y: "-20%",
@@ -301,19 +320,63 @@ function appendHexNut(parent, cx, cy, r, flat, fillId = "gp-bolt-bronze") {
   }
 }
 
-// A bolt seated vertically on top of a surface: the hex head sticks up and the
-// threaded shaft runs straight down into the part, so the point faces down and
-// is hidden. surfaceY is the top face the bolt is driven into.
+// A bolt seen from the SIDE, seated on a surface: only the side of the hex head
+// is visible (a chamfered steel box), while the threaded shaft is hidden inside
+// the part below. surfaceY is the top face the head rests on.
 function appendTopBolt(parent, cx, surfaceY, r) {
-  // Recessed seat where the shaft enters the surface.
-  parent.appendChild(el("ellipse", {
-    cx, cy: surfaceY,
-    rx: r * 0.9, ry: r * 0.3,
+  const halfW = r;            // head half-width (full width ~2r)
+  const headH = r * 1.5;      // head is a touch taller than half its width
+  const chamfer = r * 0.34;   // bevel taken off the top corners
+  const topY = surfaceY - headH;
+
+  // Seating shadow where the head meets the plate, so it reads as seated.
+  parent.appendChild(el("rect", {
+    x: cx - halfW * 1.06, y: surfaceY - headH * 0.06,
+    width: halfW * 2.12, height: headH * 0.14,
+    rx: r * 0.12, ry: r * 0.12,
     fill: "#0a0402",
-    opacity: 0.8,
+    opacity: 0.7,
   }));
-  // Hex head sitting proud of the surface (mostly above, slightly seated).
-  appendHexNut(parent, cx, surfaceY - r * 0.45, r, false, "gp-bolt-copper");
+
+  // Side profile of the hex head: a box with chamfered top corners.
+  parent.appendChild(el("polygon", {
+    points: [
+      `${cx - halfW},${surfaceY}`,
+      `${cx - halfW},${topY + chamfer}`,
+      `${cx - halfW + chamfer},${topY}`,
+      `${cx + halfW - chamfer},${topY}`,
+      `${cx + halfW},${topY + chamfer}`,
+      `${cx + halfW},${surfaceY}`,
+    ].join(" "),
+    fill: "url(#gp-bolt-steel)",
+    stroke: "#2a3036",
+    "stroke-width": Math.max(0.8, r * 0.14),
+    "stroke-linejoin": "round",
+  }));
+
+  // Top bevel highlight along the chamfered crown.
+  parent.appendChild(el("polyline", {
+    points: [
+      `${cx - halfW + chamfer},${topY + r * 0.06}`,
+      `${cx + halfW - chamfer},${topY + r * 0.06}`,
+    ].join(" "),
+    fill: "none",
+    stroke: "#f4f7fa",
+    "stroke-width": Math.max(0.8, r * 0.12),
+    "stroke-linecap": "round",
+    opacity: 0.7,
+  }));
+
+  // Vertical facet lines suggesting the machined flats of the hex head.
+  [-halfW * 0.42, halfW * 0.42].forEach((dx) => {
+    parent.appendChild(el("line", {
+      x1: cx + dx, y1: topY + chamfer * 0.7,
+      x2: cx + dx, y2: surfaceY - headH * 0.12,
+      stroke: "#3c444b",
+      "stroke-width": Math.max(0.6, r * 0.07),
+      opacity: 0.45,
+    }));
+  });
 }
 
 // Bronze foot flange where each vertical drop is bolted into the ground.
