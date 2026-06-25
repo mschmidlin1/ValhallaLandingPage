@@ -114,7 +114,10 @@ body {
   padding: var(--gauge-card-padding);
   transition: transform 0.3s ease;
 }
-.gauge:hover { transform: translateY(-6px); }
+@media (hover: hover) {
+  .gauge:hover { transform: translateY(-6px); }
+}
+.gauge:active { transform: translateY(-3px); }
 
 .gauge-face {
   position: relative;
@@ -591,24 +594,61 @@ body {
   }
 }
 
-@media (max-width: 900px) {
+/* --- Responsive tiers (desktop defaults unchanged above 1024px) ------------ */
+@media (max-width: 1024px) {
   body {
-    --cog-column-width: 180px;
+    --cog-column-width: 160px;
+    --cog-gauge-gap: 20px;
+  }
+  .gauges {
+    gap: 32px 40px;
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   body {
-    --cog-column-width: 140px;
+    --cog-column-width: 100px;
+    --cog-gauge-gap: 16px;
+    --page-min-height: 140vh;
     --gauge-face-size: min(
-      220px,
-      calc(100vw - 2 * (var(--cog-column-width) + var(--cog-gauge-gap)) - 8px)
+      180px,
+      calc(100vw - 2 * (var(--cog-column-width) + var(--cog-gauge-gap)) - 24px)
+    );
+  }
+  .gauges-hub {
+    padding-top: clamp(72px, 12vh, 100px);
+    padding-bottom: clamp(48px, 8vh, 80px);
+  }
+  .gauge-glyph {
+    font-size: clamp(0.7rem, 2.8vw, 0.95rem);
+  }
+}
+
+@media (max-width: 520px) {
+  body {
+    --cog-column-width: 72px;
+    --layout-mode: stack-1col;
+  }
+  .cog-column {
+    opacity: 0.7;
+  }
+  .gauges {
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 360px) {
+  body {
+    --cog-column-width: 48px;
+    --cog-gauge-gap: 10px;
+    --gauge-face-size: min(
+      160px,
+      calc(100vw - 2 * (var(--cog-column-width) + var(--cog-gauge-gap)) - 24px)
     );
   }
   .cog-column {
-    opacity: 0.55;
-  }
-  .gauges-hub {
-    padding-top: 88px;
+    opacity: 0.65;
   }
 }

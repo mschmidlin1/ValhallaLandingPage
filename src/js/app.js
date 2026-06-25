@@ -1483,16 +1483,14 @@ function readingToAngle(reading) {
 function attachGaugeHover(gaugeEl, needleEl) {
   const state = { angle: GAUGE_REST_ANGLE };
   let activeTween = null;
+  const hoverCapable = window.matchMedia("(hover: hover)").matches;
 
   const setNeedleAngle = (angle) => {
     state.angle = angle;
     needleEl.style.transform = `rotate(${angle}deg)`;
   };
 
-  needleEl.removeAttribute("transform");
-  setNeedleAngle(GAUGE_REST_ANGLE);
-
-  gaugeEl.addEventListener("mouseenter", () => {
+  const activateHover = () => {
     if (activeTween) activeTween.kill();
 
     gaugeEl.classList.add("is-hovered");
@@ -1504,9 +1502,9 @@ function attachGaugeHover(gaugeEl, needleEl) {
       ease: reducedMotion ? "none" : "elastic.out(1, 0.45)",
       onUpdate: () => setNeedleAngle(state.angle),
     });
-  });
+  };
 
-  gaugeEl.addEventListener("mouseleave", () => {
+  const resetNeedle = () => {
     if (activeTween) {
       activeTween.kill();
       activeTween = null;
@@ -1519,7 +1517,25 @@ function attachGaugeHover(gaugeEl, needleEl) {
       ease: reducedMotion ? "none" : "power2.out",
       onUpdate: () => setNeedleAngle(state.angle),
     });
-  });
+  };
+
+  needleEl.removeAttribute("transform");
+  setNeedleAngle(GAUGE_REST_ANGLE);
+
+  if (hoverCapable) {
+    gaugeEl.addEventListener("pointerenter", activateHover);
+    gaugeEl.addEventListener("pointerleave", resetNeedle);
+  } else {
+    gaugeEl.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "touch") activateHover();
+    });
+    gaugeEl.addEventListener("pointerup", (e) => {
+      if (e.pointerType === "touch") {
+        setTimeout(resetNeedle, 400);
+      }
+    });
+    gaugeEl.addEventListener("pointercancel", resetNeedle);
+  }
 }
 
 const comingSoonBanner = document.getElementById("coming-soon-banner");
