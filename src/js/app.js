@@ -5,6 +5,7 @@
 // - Procedural smokestacks with WebGL fluid steam bursts
 
 import { VALHALLA_LINKS, hasNavigableUrl } from "./links.js";
+import { fetchTrendlineUrl } from "./trendline-link.js";
 import { createFluidSteam } from "./fluid-steam.js?v=21";
 import { attachGaugePipeNetwork, buildGaugePipeNetwork } from "./pipe-network.js?v=31";
 
@@ -1546,11 +1547,25 @@ function showComingSoonBanner() {
   }, 3000);
 }
 
+function onComingSoonClick(e) {
+  e.preventDefault();
+  showComingSoonBanner();
+}
+
+function activateGaugeLink(gaugeEl, url) {
+  gaugeEl.href = url;
+  gaugeEl.target = "_blank";
+  gaugeEl.rel = "noopener noreferrer";
+  gaugeEl.dataset.status = "live";
+  gaugeEl.removeEventListener("click", onComingSoonClick);
+}
+
 const gaugesContainer = document.getElementById("gauges");
 VALHALLA_LINKS.forEach((link) => {
   const a = document.createElement("a");
   a.className = "gauge";
   a.dataset.status = link.status;
+  a.dataset.linkId = link.id;
 
   if (hasNavigableUrl(link)) {
     a.href = link.url;
@@ -1558,10 +1573,7 @@ VALHALLA_LINKS.forEach((link) => {
     a.rel = "noopener noreferrer";
   } else {
     a.href = "#";
-    a.addEventListener("click", (e) => {
-      e.preventDefault();
-      showComingSoonBanner();
-    });
+    a.addEventListener("click", onComingSoonClick);
   }
 
   a.innerHTML = `
@@ -1591,6 +1603,12 @@ VALHALLA_LINKS.forEach((link) => {
 
   attachGaugeHover(a, a.querySelector(".gauge-needle"));
   gaugesContainer.appendChild(a);
+});
+
+fetchTrendlineUrl().then((url) => {
+  if (!url) return;
+  const gauge = gaugesContainer.querySelector('[data-link-id="trendline"]');
+  if (gauge) activateGaugeLink(gauge, url);
 });
 
 const gaugesHubEl = document.querySelector(".gauges-hub");
