@@ -93,3 +93,11 @@ a:hover { color: var(--gold-light); }
 .t-mono { font-family: var(--font-mono); }
 .t-display { font-family: var(--font-display); letter-spacing: 0.1em; }
 .t-dim { color: var(--text-dim); }
+
+@media (max-width: 768px) {
+  .valhalla-mark {
+    font-size: clamp(1.35rem, 5.5vw, 2.6rem);
+    top: clamp(12px, 3vh, 24px);
+    left: clamp(12px, 4vw, 32px);
+  }
+}
