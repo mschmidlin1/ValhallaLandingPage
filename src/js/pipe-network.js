@@ -13,7 +13,7 @@ const SINGLE_ROW_TOP_TOLERANCE = 8;
 const SINGLE_ROW_MIN_PADDING_TOP = 48;
 const RISER_RADIUS = 30;
 const GAUGE_PAD = 18;
-const PIPE_END_MARGIN = 24;
+const PIPE_END_MARGIN = 2; // drops reach the page bottom so floor flanges sit flush
 const CORNER_EDGE_MARGIN = 24; // px gap between the corner and the cog column
 // How far the riser sinks into the main pipe so the joint reads as welded
 // rather than glued-on. Up to the centerline minus a hair so the saddle
@@ -71,6 +71,33 @@ function ensureDefs(defs) {
     collarGrad.appendChild(el("stop", { offset, "stop-color": color }));
   });
   defs.appendChild(collarGrad);
+
+  // Bronze hex-nut head: light catches the top-left facet, falling off to a
+  // dark machined edge. objectBoundingBox units so one def serves every bolt.
+  const boltBronze = el("radialGradient", { id: "gp-bolt-bronze", cx: "34%", cy: "30%", r: "82%" });
+  [
+    ["0%", "#ffe6b0"],
+    ["26%", "#f0c878"],
+    ["55%", "#b07a3e"],
+    ["80%", "#6e451f"],
+    ["100%", "#2a1608"],
+  ].forEach(([offset, color]) => {
+    boltBronze.appendChild(el("stop", { offset, "stop-color": color }));
+  });
+  defs.appendChild(boltBronze);
+
+  // Darker copper bolt head, tuned to match the deeper copper of the pipe.
+  const boltCopper = el("radialGradient", { id: "gp-bolt-copper", cx: "34%", cy: "30%", r: "82%" });
+  [
+    ["0%", "#d49a52"],
+    ["30%", "#a86a32"],
+    ["60%", "#6e3f1c"],
+    ["82%", "#43250f"],
+    ["100%", "#160a04"],
+  ].forEach(([offset, color]) => {
+    boltCopper.appendChild(el("stop", { offset, "stop-color": color }));
+  });
+  defs.appendChild(boltCopper);
 
   const shadowFilter = el("filter", {
     id: "gp-pipe-shadow",
@@ -161,6 +188,40 @@ function addCylinderGradient(defs, p0, p1, radius) {
   return id;
 }
 
+// Same cylindrical shading as the pipe, but a deeper copper with a muted
+// highlight so the flange foot reads as the same darker metal as the pipe
+// rather than bright polished brass.
+function addFlangeGradient(defs, p0, p1, radius) {
+  const id = `gp-cyl-${++gradCounter}`;
+  const mx = (p0.x + p1.x) / 2;
+  const my = (p0.y + p1.y) / 2;
+  const n = perp(dirUnit(p0, p1));
+  const grad = el("linearGradient", {
+    id,
+    gradientUnits: "userSpaceOnUse",
+    x1: mx + n.x * radius,
+    y1: my + n.y * radius,
+    x2: mx - n.x * radius,
+    y2: my - n.y * radius,
+  });
+  [
+    ["0%",   "#0a0402"],
+    ["12%",  "#241206"],
+    ["28%",  "#48280f"],
+    ["40%",  "#7a4a22"],
+    ["48%",  "#b07336"],
+    ["50%",  "#d49a52"],
+    ["54%",  "#a86a32"],
+    ["64%",  "#6e3f1c"],
+    ["80%",  "#34190a"],
+    ["100%", "#080301"],
+  ].forEach(([offset, color]) => {
+    grad.appendChild(el("stop", { offset, "stop-color": color }));
+  });
+  defs.appendChild(grad);
+  return id;
+}
+
 // Stroke a straight pipe segment with the cylindrical gradient.
 // Dark outer rim + main cylinder fill + subtle off-axis highlight wash.
 function strokeSegment(parent, defs, p0, p1, radius) {
@@ -205,44 +266,134 @@ function addClipPath(defs, points) {
 
 /* ---------- Base anchor flanges (vertical drop feet only) ------------- */
 
-// Wider "base" flange used where the vertical drops anchor at the page bottom.
-function appendAnchorFlange(parent, cx, cy, pipeR) {
-  const g = el("g", { class: "gp-anchor-flange" });
-  const w = pipeR * 3.6;
-  const h = pipeR * 1.05;
-
-  g.appendChild(el("ellipse", {
-    cx, cy: cy + h * 0.2,
-    rx: w * 0.55,
-    ry: h * 0.6,
-    fill: "#000000",
-    opacity: "0.45",
-  }));
-
-  g.appendChild(el("rect", {
-    x: cx - w / 2,
-    y: cy - h / 2,
-    width: w,
-    height: h,
-    rx: h * 0.22,
-    ry: h * 0.22,
-    fill: "url(#gp-bronze-collar)",
-    stroke: "#1a0c06",
-    "stroke-width": "2.5",
-  }));
-
-  const boltCount = 10;
-  for (let i = 0; i < boltCount; i++) {
-    const a = (i / boltCount) * Math.PI * 2;
-    g.appendChild(el("circle", {
-      cx: cx + Math.cos(a) * w * 0.38,
-      cy: cy + Math.sin(a) * h * 0.32,
-      r: 2.6,
-      fill: "#120906",
-      stroke: "#5a3a1e",
-      "stroke-width": "0.7",
-    }));
+// A single hex nut viewed flat-on, with a dark seating ring beneath so it reads
+// as a raised piece of hardware rather than a printed dot.
+function appendHexNut(parent, cx, cy, r, flat, fillId = "gp-bolt-bronze") {
+  const pts = [];
+  // flat-topped hex (flat edge facing up) looks more like a torqued nut
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+    pts.push(`${cx + Math.cos(a) * r},${cy + Math.sin(a) * r}`);
   }
+  // Seating shadow ring.
+  parent.appendChild(el("circle", {
+    cx, cy, r: r * 1.18,
+    fill: "#0a0402",
+    opacity: 0.6,
+  }));
+  parent.appendChild(el("polygon", {
+    points: pts.join(" "),
+    fill: `url(#${fillId})`,
+    stroke: "#160a04",
+    "stroke-width": Math.max(0.8, r * 0.16),
+    "stroke-linejoin": "round",
+  }));
+  // Soft top-left facet catch (kept dim so the bolt stays coppery).
+  parent.appendChild(el("circle", {
+    cx: cx - r * 0.28, cy: cy - r * 0.3,
+    r: r * 0.32,
+    fill: "#e8b06a",
+    opacity: 0.4,
+  }));
+  // Center bore.
+  if (!flat) {
+    parent.appendChild(el("circle", { cx, cy, r: r * 0.26, fill: "#160a04", opacity: 0.75 }));
+  }
+}
+
+// A bolt seated vertically on top of a surface: the hex head sticks up and the
+// threaded shaft runs straight down into the part, so the point faces down and
+// is hidden. surfaceY is the top face the bolt is driven into.
+function appendTopBolt(parent, cx, surfaceY, r) {
+  // Recessed seat where the shaft enters the surface.
+  parent.appendChild(el("ellipse", {
+    cx, cy: surfaceY,
+    rx: r * 0.9, ry: r * 0.3,
+    fill: "#0a0402",
+    opacity: 0.8,
+  }));
+  // Hex head sitting proud of the surface (mostly above, slightly seated).
+  appendHexNut(parent, cx, surfaceY - r * 0.45, r, false, "gp-bolt-copper");
+}
+
+// Bronze foot flange where each vertical drop is bolted into the ground.
+// Drawn in side elevation to match the flat-cylinder pipes: the pipe runs down
+// through a tapered hub onto a wide flat base plate that sits flush on the page
+// bottom, with vertical bolts driven into the top of the plate. cy is the
+// ground line (the bottom edge of the base plate).
+function appendAnchorFlange(parent, defs, cx, cy, pipeR) {
+  const g = el("g", { class: "gp-anchor-flange" });
+
+  const footR = pipeR * 2.15;     // flat base plate half-width
+  const footH = pipeR * 0.5;      // flat base plate height
+  const taperH = pipeR * 0.62;    // tapered hub height
+  const taperTopR = pipeR * 1.04; // hub half-width at the pipe
+  const taperBotR = pipeR * 1.32; // hub half-width where it meets the plate
+
+  const footBottomY = cy;
+  const footTopY = footBottomY - footH;
+  const taperTopY = footTopY - taperH;
+
+  // Tapered hub flaring from the pipe down onto the flat plate.
+  const taperGrad = addFlangeGradient(
+    defs,
+    { x: cx - taperBotR, y: taperTopY },
+    { x: cx + taperBotR, y: taperTopY },
+    taperBotR,
+  );
+  g.appendChild(el("polygon", {
+    points: [
+      `${cx - taperTopR},${taperTopY}`,
+      `${cx + taperTopR},${taperTopY}`,
+      `${cx + taperBotR},${footTopY}`,
+      `${cx - taperBotR},${footTopY}`,
+    ].join(" "),
+    fill: `url(#${taperGrad})`,
+    stroke: "#160a04",
+    "stroke-width": 2,
+    "stroke-linejoin": "round",
+  }));
+
+  // Flat base plate, deep copper to match the pipe, flush on the ground.
+  const footGrad = addFlangeGradient(
+    defs,
+    { x: cx - footR, y: footTopY },
+    { x: cx + footR, y: footTopY },
+    footR,
+  );
+  g.appendChild(el("rect", {
+    x: cx - footR, y: footTopY,
+    width: footR * 2, height: footH,
+    rx: footH * 0.16, ry: footH * 0.16,
+    fill: `url(#${footGrad})`,
+    stroke: "#160a04",
+    "stroke-width": 2.5,
+  }));
+
+  // Subtle top-edge highlight to give the plate a chamfered lip.
+  g.appendChild(el("rect", {
+    x: cx - footR * 0.95, y: footTopY + footH * 0.08,
+    width: footR * 1.9, height: footH * 0.12,
+    rx: footH * 0.06, ry: footH * 0.06,
+    fill: "#d49a52",
+    opacity: 0.16,
+  }));
+
+  // Darker seam along the very bottom so the plate seats into the ground.
+  g.appendChild(el("rect", {
+    x: cx - footR, y: footBottomY - footH * 0.16,
+    width: footR * 2, height: footH * 0.16,
+    rx: footH * 0.1, ry: footH * 0.1,
+    fill: "#0a0402",
+    opacity: 0.55,
+  }));
+
+  // Vertical bolts driven into the top of the plate, on the shelf to either
+  // side of the tapered hub (heads up, points down into the flange).
+  const boltR = pipeR * 0.24;
+  const boltX = footR * 0.74;
+  appendTopBolt(g, cx - boltX, footTopY, boltR);
+  appendTopBolt(g, cx + boltX, footTopY, boltR);
 
   parent.appendChild(g);
 }
@@ -591,7 +742,7 @@ function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
     R,
   );
   pipes.appendChild(leftDropG);
-  appendAnchorFlange(fittings, leftCorner.x, dropEndY, R);
+  appendAnchorFlange(fittings, defs, leftCorner.x, dropEndY, R);
 
   // Right drop: mirrored miter.
   const rightDropClip = addClipPath(defs, [
@@ -608,7 +759,7 @@ function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
     R,
   );
   pipes.appendChild(rightDropG);
-  appendAnchorFlange(fittings, rightCorner.x, dropEndY, R);
+  appendAnchorFlange(fittings, defs, rightCorner.x, dropEndY, R);
 
   // Steam valves: two per vertical drop, staggered between sides. Alternate the
   // vent direction so the jets are mixed (inward toward center / outward toward
