@@ -11,6 +11,10 @@
 body {
   --cog-column-width: 220px;
   --cog-gauge-gap: 24px; /* extra inset so gear teeth do not overlap gauges */
+  --hub-side-inset: calc(var(--cog-column-width) + var(--cog-gauge-gap));
+  --pipe-scale: 1;
+  --cog-y-start-left: 120px;
+  --cog-y-start-right: 10px;
   --gauge-face-size: 220px;
   --gauge-card-padding: 16px;
   --gauge-card-width: calc(var(--gauge-face-size) + 2 * var(--gauge-card-padding));
@@ -59,7 +63,7 @@ body {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: 100px calc(var(--cog-column-width) + var(--cog-gauge-gap)) 80px;
+  padding: 100px var(--hub-side-inset) 80px;
   overflow: visible;
 }
 
@@ -597,8 +601,11 @@ body {
 /* --- Responsive tiers (desktop defaults unchanged above 1024px) ------------ */
 @media (max-width: 1024px) {
   body {
-    --cog-column-width: 160px;
-    --cog-gauge-gap: 20px;
+    --cog-column-width: 220px;
+    --cog-gauge-gap: 24px;
+    --hub-side-inset: max(16px, calc((100vw - var(--gauge-card-width)) / 2));
+    --cog-y-start-left: 120px;
+    --cog-y-start-right: 10px;
   }
   .gauges {
     gap: 32px 40px;
@@ -607,12 +614,17 @@ body {
 
 @media (max-width: 768px) {
   body {
-    --cog-column-width: 100px;
-    --cog-gauge-gap: 16px;
+    /* Match desktop cog framing; hub inset centers gauges independently */
+    --cog-column-width: 220px;
+    --cog-gauge-gap: 24px;
+    --hub-side-inset: max(16px, calc((100vw - var(--gauge-card-width)) / 2));
+    --cog-y-start-left: 120px;
+    --cog-y-start-right: 10px;
     --page-min-height: 140vh;
+    --pipe-scale: 0.82;
     --gauge-face-size: min(
-      180px,
-      calc(100vw - 2 * (var(--cog-column-width) + var(--cog-gauge-gap)) - 24px)
+      160px,
+      calc(100vw - 48px)
     );
   }
   .gauges-hub {
@@ -620,35 +632,54 @@ body {
     padding-bottom: clamp(48px, 8vh, 80px);
   }
   .gauge-glyph {
-    font-size: clamp(0.7rem, 2.8vw, 0.95rem);
+    font-size: clamp(0.65rem, 2.6vw, 0.9rem);
   }
 }
 
 @media (max-width: 520px) {
   body {
-    --cog-column-width: 72px;
-    --layout-mode: stack-1col;
+    --cog-column-width: 220px;
+    --cog-gauge-gap: 24px;
+    --hub-side-inset: max(12px, calc((100vw - var(--gauge-card-width)) / 2));
+    --pipe-scale: 0.68;
+    --cog-y-start-left: 120px;
+    --cog-y-start-right: 10px;
+    --page-min-height: 120vh;
+    --pipe-drop-reserve: 220px;
+    --gauge-face-size: min(138px, calc(100vw - 56px));
+    --gauge-card-padding: 12px;
+    padding-bottom: var(--pipe-drop-reserve);
   }
   .cog-column {
-    opacity: 0.7;
+    opacity: 1;
+  }
+  .gauges-hub {
+    padding-top: clamp(80px, 14vh, 108px);
+    padding-bottom: clamp(64px, 10vh, 96px);
   }
   .gauges {
     flex-direction: column;
     align-items: center;
-    gap: 28px;
+    gap: 22px;
+  }
+  .gauge-face {
+    box-shadow:
+      inset 0 0 0 6px var(--brass),
+      inset 0 0 0 9px var(--brass-dark),
+      inset 0 0 0 11px var(--brass-light),
+      inset 0 4px 14px rgba(0, 0, 0, 0.9),
+      0 6px 18px rgba(0, 0, 0, 0.8),
+      0 0 0 2px #2a1f10;
+  }
+  .gauge-face svg {
+    inset: 11px;
+    width: calc(100% - 22px);
+    height: calc(100% - 22px);
   }
 }
 
 @media (max-width: 360px) {
   body {
-    --cog-column-width: 48px;
-    --cog-gauge-gap: 10px;
-    --gauge-face-size: min(
-      160px,
-      calc(100vw - 2 * (var(--cog-column-width) + var(--cog-gauge-gap)) - 24px)
-    );
-  }
-  .cog-column {
-    opacity: 0.65;
+    --gauge-face-size: min(128px, calc(100vw - 48px));
   }
 }

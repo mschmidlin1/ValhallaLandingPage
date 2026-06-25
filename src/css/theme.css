@@ -101,3 +101,14 @@ a:hover { color: var(--gold-light); }
     left: clamp(12px, 4vw, 32px);
   }
 }
+
+@media (max-width: 520px) {
+  .valhalla-mark {
+    /* Same placement as desktop — sits above the cog column via z-index */
+    left: 32px;
+    top: 24px;
+    font-size: clamp(1.35rem, 5.5vw, 2.6rem);
+    letter-spacing: 0.18em;
+    max-width: calc(100vw - 64px);
+  }
+}
