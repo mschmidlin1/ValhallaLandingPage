@@ -5,6 +5,7 @@
 // - Procedural smokestacks with WebGL fluid steam bursts
 
 import { VALHALLA_LINKS, hasNavigableUrl } from "./links.js";
+import { fetchTrendlineUrl } from "./trendline-link.js";
 import { createFluidSteam } from "./fluid-steam.js?v=21";
 import { attachGaugePipeNetwork, buildGaugePipeNetwork } from "./pipe-network.js?v=31";
 
@@ -1218,9 +1219,20 @@ function populateCogColumn(svgEl, side) {
   return cogs;
 }
 
+const REFERENCE_PAGE_MIN_VH = 250;
+const REFERENCE_BASE_TURNS = 2;
+
+function getPageMinHeightVh() {
+  const raw = getComputedStyle(document.body).getPropertyValue("--page-min-height").trim();
+  const match = /^([\d.]+)vh$/i.exec(raw);
+  return match ? parseFloat(match[1]) : REFERENCE_PAGE_MIN_VH;
+}
+
 function attachCogRotation(cogs) {
   const referenceR = 50;
-  const baseTurns = 2;
+  const pageMinVh = getPageMinHeightVh();
+  const scrollRangeRatio = (pageMinVh - 100) / (REFERENCE_PAGE_MIN_VH - 100);
+  const baseTurns = REFERENCE_BASE_TURNS * scrollRangeRatio;
   cogs.forEach((cog, idx) => {
     const direction = idx % 2 === 0 ? 1 : -1;
     const rotation = direction * baseTurns * 360 * (referenceR / cog.r);
@@ -1535,11 +1547,25 @@ function showComingSoonBanner() {
   }, 3000);
 }
 
+function onComingSoonClick(e) {
+  e.preventDefault();
+  showComingSoonBanner();
+}
+
+function activateGaugeLink(gaugeEl, url) {
+  gaugeEl.href = url;
+  gaugeEl.target = "_blank";
+  gaugeEl.rel = "noopener noreferrer";
+  gaugeEl.dataset.status = "live";
+  gaugeEl.removeEventListener("click", onComingSoonClick);
+}
+
 const gaugesContainer = document.getElementById("gauges");
 VALHALLA_LINKS.forEach((link) => {
   const a = document.createElement("a");
   a.className = "gauge";
   a.dataset.status = link.status;
+  a.dataset.linkId = link.id;
 
   if (hasNavigableUrl(link)) {
     a.href = link.url;
@@ -1547,10 +1573,7 @@ VALHALLA_LINKS.forEach((link) => {
     a.rel = "noopener noreferrer";
   } else {
     a.href = "#";
-    a.addEventListener("click", (e) => {
-      e.preventDefault();
-      showComingSoonBanner();
-    });
+    a.addEventListener("click", onComingSoonClick);
   }
 
   a.innerHTML = `
@@ -1582,13 +1605,19 @@ VALHALLA_LINKS.forEach((link) => {
   gaugesContainer.appendChild(a);
 });
 
+fetchTrendlineUrl().then((url) => {
+  if (!url) return;
+  const gauge = gaugesContainer.querySelector('[data-link-id="trendline"]');
+  if (gauge) activateGaugeLink(gauge, url);
+});
+
 const gaugesHubEl = document.querySelector(".gauges-hub");
 const gaugePipeSvg = document.getElementById("gauge-pipe-network");
 if (gaugesHubEl && gaugePipeSvg) {
   attachGaugePipeNetwork({ hubEl: gaugesHubEl, svgEl: gaugePipeSvg });
 }
 
-/* ---------- Steam valves: turn → vent → turn-back sequence ------------ */
+/* ---------- Steam valves: turn → vent (close overlaps end) ------------ */
 const steamLayerEl = document.querySelector(".steam-fluid-layer");
 
 const fluidSteam =
@@ -1619,6 +1648,8 @@ function runValveCycle(wheel, idx, cx, cy) {
   // Alternate the turn direction per valve for variety; open then close.
   const openDeg = (idx % 2 === 0 ? 1 : -1) * 150;
   const origin = `${cx} ${cy}`;
+  const STEAM_DURATION_S = 9;
+  const CLOSE_DURATION_S = 2;
   const tl = gsap.timeline({
     onComplete: () => scheduleValve(wheel, idx, cx, cy),
   });
@@ -1626,11 +1657,11 @@ function runValveCycle(wheel, idx, cx, cy) {
   tl.to(wheel, { rotation: openDeg, svgOrigin: origin, duration: 2, ease: "power1.inOut" });
   // 2) steam issues from the side vent for ~9s
   tl.call(() => {
-    if (fluidSteam) fluidSteam.burstAtVent(idx, { durationMs: 9000 });
+    if (fluidSteam) fluidSteam.burstAtVent(idx, { durationMs: STEAM_DURATION_S * 1000 });
   });
-  tl.to({}, { duration: 9 });
-  // 3) wheel turns slowly back (close)
-  tl.to(wheel, { rotation: 0, svgOrigin: origin, duration: 2, ease: "power1.inOut" });
+  tl.to({}, { duration: STEAM_DURATION_S - CLOSE_DURATION_S });
+  // 3) wheel turns slowly back (close) while steam is still on; steam ends when close finishes
+  tl.to(wheel, { rotation: 0, svgOrigin: origin, duration: CLOSE_DURATION_S, ease: "power1.inOut" });
   valveTweens.push(tl);
 }
 

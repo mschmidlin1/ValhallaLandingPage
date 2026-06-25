@@ -24,7 +24,7 @@ export const VALHALLA_LINKS = [
     title: "Trendline",
     subtitle: "Market Dashboard",
     description: "Real-time market trend analysis",
-    url: "#",
+    url: "#", // resolved at runtime from mschmidlin1/TrendLine README (see trendline-link.js)
     status: "coming-soon",
   },
   {
