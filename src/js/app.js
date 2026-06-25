@@ -1599,7 +1599,7 @@ if (gaugesHubEl && gaugePipeSvg) {
   attachGaugePipeNetwork({ hubEl: gaugesHubEl, svgEl: gaugePipeSvg });
 }
 
-/* ---------- Steam valves: turn → vent → turn-back sequence ------------ */
+/* ---------- Steam valves: turn → vent (close overlaps end) ------------ */
 const steamLayerEl = document.querySelector(".steam-fluid-layer");
 
 const fluidSteam =
@@ -1630,6 +1630,8 @@ function runValveCycle(wheel, idx, cx, cy) {
   // Alternate the turn direction per valve for variety; open then close.
   const openDeg = (idx % 2 === 0 ? 1 : -1) * 150;
   const origin = `${cx} ${cy}`;
+  const STEAM_DURATION_S = 9;
+  const CLOSE_DURATION_S = 2;
   const tl = gsap.timeline({
     onComplete: () => scheduleValve(wheel, idx, cx, cy),
   });
@@ -1637,11 +1639,11 @@ function runValveCycle(wheel, idx, cx, cy) {
   tl.to(wheel, { rotation: openDeg, svgOrigin: origin, duration: 2, ease: "power1.inOut" });
   // 2) steam issues from the side vent for ~9s
   tl.call(() => {
-    if (fluidSteam) fluidSteam.burstAtVent(idx, { durationMs: 9000 });
+    if (fluidSteam) fluidSteam.burstAtVent(idx, { durationMs: STEAM_DURATION_S * 1000 });
   });
-  tl.to({}, { duration: 9 });
-  // 3) wheel turns slowly back (close)
-  tl.to(wheel, { rotation: 0, svgOrigin: origin, duration: 2, ease: "power1.inOut" });
+  tl.to({}, { duration: STEAM_DURATION_S - CLOSE_DURATION_S });
+  // 3) wheel turns slowly back (close) while steam is still on; steam ends when close finishes
+  tl.to(wheel, { rotation: 0, svgOrigin: origin, duration: CLOSE_DURATION_S, ease: "power1.inOut" });
   valveTweens.push(tl);
 }
 
