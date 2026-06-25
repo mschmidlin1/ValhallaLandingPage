@@ -36,6 +36,96 @@ let resizeObserver = null;
 let windowResizeBound = false;
 let gradCounter = 0;
 
+function readLayoutTokens() {
+  const style = getComputedStyle(document.body);
+  const parse = (name, fallback) => {
+    const n = parseFloat(style.getPropertyValue(name).trim());
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const pipeScale = parse("--pipe-scale", 1);
+  const cogColWidth = parse("--cog-column-width", 220);
+  const hubSideInset = parse("--hub-side-inset", cogColWidth + 24);
+  return { pipeScale, cogColWidth, hubSideInset };
+}
+
+function isStackedGaugeLayout(hubEl) {
+  const gauges = hubEl.querySelector(".gauges");
+  return gauges ? getComputedStyle(gauges).flexDirection === "column" : false;
+}
+
+function computeDropCornerXs(hubEl, anchors, docWidth, scale, cogColWidth) {
+  const R = MAIN_RADIUS * scale;
+  const margin = CORNER_EDGE_MARGIN * scale + R;
+  const minAnchorX = Math.min(...anchors.map((a) => a.x));
+  const maxAnchorX = Math.max(...anchors.map((a) => a.x));
+  const centerX = docWidth / 2;
+
+  if (isStackedGaugeLayout(hubEl)) {
+    const minSeparation = Math.max(210 * scale, docWidth * 0.54);
+    let minX = centerX - minSeparation / 2;
+    let maxX = centerX + minSeparation / 2;
+    minX = Math.max(margin, minX);
+    maxX = Math.min(docWidth - margin, maxX);
+    if (maxX - minX < minSeparation * 0.85) {
+      const mid = (minX + maxX) / 2;
+      const half = minSeparation / 2;
+      minX = Math.max(margin, mid - half);
+      maxX = Math.min(docWidth - margin, mid + half);
+    }
+    return { minX, maxX, R };
+  }
+
+  const edgeInset = cogColWidth + CORNER_EDGE_MARGIN * scale + R;
+  return {
+    minX: Math.min(minAnchorX - R * 2, edgeInset),
+    maxX: Math.max(maxAnchorX + R * 2, docWidth - edgeInset),
+    R,
+  };
+}
+
+function computeValveYs(manifoldY, dropEndY, scale, stacked) {
+  const dropSpan = Math.max(0, dropEndY - manifoldY);
+  const wheelClear = MAIN_RADIUS * scale * VALVE_WHEEL_RATIO + 10 * scale;
+  const maxY = dropEndY - Math.max(wheelClear, 28 * scale);
+  const minY = manifoldY + 28 * scale;
+  const minValveGap = 52 * scale;
+
+  let leftValveYs;
+  let rightValveYs;
+
+  if (stacked && dropSpan > 0) {
+    leftValveYs = [
+      manifoldY + dropSpan * 0.24,
+      manifoldY + dropSpan * 0.62,
+    ];
+    rightValveYs = [
+      manifoldY + dropSpan * 0.38,
+      manifoldY + dropSpan * 0.78,
+    ];
+  } else {
+    leftValveYs = [
+      manifoldY + VALVE_TOP_OFFSET_LEFT * scale,
+      manifoldY + dropSpan * VALVE_BOTTOM_FRAC_LEFT,
+    ];
+    rightValveYs = [
+      manifoldY + VALVE_TOP_OFFSET_RIGHT * scale,
+      manifoldY + dropSpan * VALVE_BOTTOM_FRAC_RIGHT,
+    ];
+  }
+
+  leftValveYs = leftValveYs.map((y) => Math.min(Math.max(y, minY), maxY));
+  rightValveYs = rightValveYs.map((y) => Math.min(Math.max(y, minY), maxY));
+
+  if (leftValveYs[1] - leftValveYs[0] < minValveGap) {
+    leftValveYs[1] = Math.min(maxY, leftValveYs[0] + minValveGap);
+  }
+  if (rightValveYs[1] - rightValveYs[0] < minValveGap) {
+    rightValveYs[1] = Math.min(maxY, rightValveYs[0] + minValveGap);
+  }
+
+  return { leftValveYs, rightValveYs };
+}
+
 function el(tag, attrs = {}) {
   const node = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -722,34 +812,29 @@ function applyHubLayout(hubEl) {
 /* ---------- Top-level build ------------------------------------------- */
 
 function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
+  const { pipeScale, cogColWidth } = readLayoutTokens();
+  const s = pipeScale;
+  const riserR = RISER_RADIUS * s;
+  const manifoldBelowAnchor = (MAIN_RADIUS + 52) * s;
+
   const pipes    = el("g", { class: "network-layer gp-pipes",    filter: "url(#gp-pipe-shadow)" });
   const fittings = el("g", { class: "network-layer gp-fittings" });
   const valves   = el("g", { class: "network-layer gp-valves",   filter: "url(#gp-pipe-shadow)" });
 
   const origin = getSvgOriginDoc(document.getElementById("gauge-pipe-network"));
 
-  const manifoldY = computeManifoldY(hubBox, anchors);
-  const xs = anchors.map((a) => a.x);
-  const minAnchorX = Math.min(...xs);
-  const maxAnchorX = Math.max(...xs);
+  const maxAnchor = anchors.length ? Math.max(...anchors.map((a) => a.y)) : hubBox.top;
+  const manifoldY = maxAnchor + manifoldBelowAnchor;
 
-  // Push the vertical drops out toward the page edges, just inside the
-  // cog columns, instead of clamping inside the gauges-hub padding. This
-  // gives the 90° corners plenty of room and lengthens the horizontal
-  // main to match.
-  const cogColWidthRaw = getComputedStyle(document.body)
-    .getPropertyValue("--cog-column-width")
-    .trim();
-  const cogColWidth = parseFloat(cogColWidthRaw) || 220;
-  const edgeInset = cogColWidth + CORNER_EDGE_MARGIN + MAIN_RADIUS;
-  const minX = Math.min(minAnchorX - MAIN_RADIUS * 2, edgeInset);
-  const maxX = Math.max(maxAnchorX + MAIN_RADIUS * 2, docWidth - edgeInset);
+  const { minX, maxX, R } = computeDropCornerXs(hubEl, anchors, docWidth, s, cogColWidth);
 
   const leftCorner  = { x: minX, y: manifoldY };
   const rightCorner = { x: maxX, y: manifoldY };
 
-  const R = MAIN_RADIUS;
-  const dropEndY = docHeight - PIPE_END_MARGIN;
+  const pipeEndMargin = isStackedGaugeLayout(hubEl)
+    ? Math.max(52, 64 * s)
+    : Math.max(PIPE_END_MARGIN, 40 * s);
+  const dropEndY = docHeight - pipeEndMargin;
 
   // Horizontal main: trapezoid clip cuts both ends at 45° so the drops can
   // butt up flush. Centerline extends R past each corner so the stroke
@@ -782,11 +867,11 @@ function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
       const kneeY = anchor.riserTopY + 36;
       const knee  = { x: riserX, y: kneeY };
       const horiz = { x: anchor.x, y: kneeY };
-      appendStraightPipe(pipes, defs, riserBottom, knee, RISER_RADIUS);
-      appendStraightPipe(pipes, defs, knee, horiz, RISER_RADIUS);
-      appendStraightPipe(pipes, defs, horiz, { x: anchor.x, y: anchor.riserTopY }, RISER_RADIUS);
+      appendStraightPipe(pipes, defs, riserBottom, knee, riserR);
+      appendStraightPipe(pipes, defs, knee, horiz, riserR);
+      appendStraightPipe(pipes, defs, horiz, { x: anchor.x, y: anchor.riserTopY }, riserR);
     } else {
-      appendStraightPipe(pipes, defs, riserBottom, riserTop, RISER_RADIUS);
+      appendStraightPipe(pipes, defs, riserBottom, riserTop, riserR);
     }
   });
 
@@ -827,9 +912,12 @@ function buildLayers(hubEl, hubBox, anchors, defs, docHeight, docWidth) {
   // Steam valves: two per vertical drop, staggered between sides. Alternate the
   // vent direction so the jets are mixed (inward toward center / outward toward
   // the edges). Left drop: inward is +1 (toward page center); right drop: -1.
-  const dropSpan = dropEndY - manifoldY;
-  const leftValveYs = [manifoldY + VALVE_TOP_OFFSET_LEFT, manifoldY + dropSpan * VALVE_BOTTOM_FRAC_LEFT];
-  const rightValveYs = [manifoldY + VALVE_TOP_OFFSET_RIGHT, manifoldY + dropSpan * VALVE_BOTTOM_FRAC_RIGHT];
+  const { leftValveYs, rightValveYs } = computeValveYs(
+    manifoldY,
+    dropEndY,
+    s,
+    isStackedGaugeLayout(hubEl),
+  );
   leftValveYs.forEach((vy, i) => {
     appendValve(valves, defs, leftCorner.x, vy, R, i === 0 ? 1 : -1, i);
   });

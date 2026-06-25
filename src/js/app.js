@@ -1176,13 +1176,22 @@ function killCogTweens() {
   while (cogTweens.length) cogTweens.pop().kill();
 }
 
+function readCssPx(varName, fallback) {
+  const raw = getComputedStyle(document.body).getPropertyValue(varName).trim();
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function populateCogColumn(svgEl, side) {
   while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
 
   const vh = window.innerHeight;
   // Stacks are temporarily disabled; let the right cog chain run the full
   // height like the left side instead of leaving its reserved smokestack zone.
-  const yStart = side === "left" ? 120 : 10;
+  const yStart = readCssPx(
+    side === "left" ? "--cog-y-start-left" : "--cog-y-start-right",
+    side === "left" ? 120 : 10,
+  );
   const yEnd = vh - 30;
 
   svgEl.setAttribute("viewBox", `0 0 ${COL_W} ${vh}`);
