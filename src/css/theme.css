@@ -18,15 +18,15 @@
   );
   --silver-gradient: linear-gradient(
     125deg,
-    #ffffff 0%,
-    #eef2f8 7%,
-    #c4cad6 18%,
-    #505868 32%,
-    #b0b8c8 46%,
-    #f0f4fa 58%,
-    #788090 72%,
-    #dce2ec 86%,
-    #ffffff 100%
+    #7a8698 0%,
+    #a8b4c4 8%,
+    #5c6678 20%,
+    #343c48 34%,
+    #788898 48%,
+    #b0bcc8 58%,
+    #4a5564 72%,
+    #98a4b4 86%,
+    #7a8698 100%
   );
 }
 
@@ -46,6 +46,7 @@
     --border-strong: rgba(212, 175, 55, 0.35);
     --shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
     --focus-ring: rgba(248, 236, 192, 0.45);
+    --metal-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     --toast-bg: #1c1a16;
     --toast-border: rgba(212, 175, 55, 0.3);
   }
@@ -65,28 +66,29 @@
   --border-strong: rgba(212, 175, 55, 0.35);
   --shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
   --focus-ring: rgba(248, 236, 192, 0.45);
+  --metal-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   --toast-bg: #1c1a16;
   --toast-border: rgba(212, 175, 55, 0.3);
 }
-
-/* --- Light tokens (platinum silver) ------------------------------------ */
+ (platinum silver) ------------------------------------ */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     --bg: #f7f5f1;
     --bg-elevated: #ffffff;
     --bg-hover: #f0ece6;
     --accent-gradient: var(--silver-gradient);
-    --accent-glow: rgba(176, 184, 200, 0.4);
-    --accent-subtle: rgba(120, 128, 144, 0.1);
+    --accent-glow: rgba(74, 85, 100, 0.25);
+    --accent-subtle: rgba(74, 85, 100, 0.1);
     --text-primary: #1c1a16;
-    --text-secondary: #5c574f;
-    --text-dim: #9a948a;
-    --border: rgba(28, 26, 22, 0.08);
-    --border-strong: rgba(120, 128, 144, 0.35);
-    --shadow: 0 4px 24px rgba(28, 26, 22, 0.07);
-    --focus-ring: rgba(176, 184, 200, 0.45);
+    --text-secondary: #4a4540;
+    --text-dim: #8a8480;
+    --border: rgba(28, 26, 22, 0.1);
+    --border-strong: rgba(74, 85, 100, 0.45);
+    --shadow: 0 4px 24px rgba(28, 26, 22, 0.08);
+    --focus-ring: rgba(74, 85, 100, 0.5);
+    --metal-shadow: 0 1px 2px rgba(52, 60, 72, 0.35);
     --toast-bg: #ffffff;
-    --toast-border: rgba(120, 128, 144, 0.25);
+    --toast-border: rgba(74, 85, 100, 0.3);
   }
 }
 
@@ -95,17 +97,18 @@
   --bg-elevated: #ffffff;
   --bg-hover: #f0ece6;
   --accent-gradient: var(--silver-gradient);
-  --accent-glow: rgba(176, 184, 200, 0.4);
-  --accent-subtle: rgba(120, 128, 144, 0.1);
+  --accent-glow: rgba(74, 85, 100, 0.25);
+  --accent-subtle: rgba(74, 85, 100, 0.1);
   --text-primary: #1c1a16;
-  --text-secondary: #5c574f;
-  --text-dim: #9a948a;
-  --border: rgba(28, 26, 22, 0.08);
-  --border-strong: rgba(120, 128, 144, 0.35);
-  --shadow: 0 4px 24px rgba(28, 26, 22, 0.07);
-  --focus-ring: rgba(176, 184, 200, 0.45);
+  --text-secondary: #4a4540;
+  --text-dim: #8a8480;
+  --border: rgba(28, 26, 22, 0.1);
+  --border-strong: rgba(74, 85, 100, 0.45);
+  --shadow: 0 4px 24px rgba(28, 26, 22, 0.08);
+  --focus-ring: rgba(74, 85, 100, 0.5);
+  --metal-shadow: 0 1px 2px rgba(52, 60, 72, 0.35);
   --toast-bg: #ffffff;
-  --toast-border: rgba(120, 128, 144, 0.25);
+  --toast-border: rgba(74, 85, 100, 0.3);
 }
 
 /* SVG gradient stops — gold (dark mode) */
@@ -129,26 +132,26 @@
 :root[data-theme="dark"] .metal-s7 { stop-color: #a88428; }
 :root[data-theme="dark"] .metal-s8 { stop-color: #fffef5; }
 
-/* SVG gradient stops — platinum silver (light mode) */
+/* SVG gradient stops — platinum silver (light mode, darker range for contrast on white) */
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme]) .metal-s1 { stop-color: #ffffff; }
-  :root:not([data-theme]) .metal-s2 { stop-color: #eef2f8; }
-  :root:not([data-theme]) .metal-s3 { stop-color: #c4cad6; }
-  :root:not([data-theme]) .metal-s4 { stop-color: #505868; }
-  :root:not([data-theme]) .metal-s5 { stop-color: #b0b8c8; }
-  :root:not([data-theme]) .metal-s6 { stop-color: #f0f4fa; }
-  :root:not([data-theme]) .metal-s7 { stop-color: #788090; }
-  :root:not([data-theme]) .metal-s8 { stop-color: #ffffff; }
+  :root:not([data-theme]) .metal-s1 { stop-color: #7a8698; }
+  :root:not([data-theme]) .metal-s2 { stop-color: #a8b4c4; }
+  :root:not([data-theme]) .metal-s3 { stop-color: #5c6678; }
+  :root:not([data-theme]) .metal-s4 { stop-color: #343c48; }
+  :root:not([data-theme]) .metal-s5 { stop-color: #788898; }
+  :root:not([data-theme]) .metal-s6 { stop-color: #b0bcc8; }
+  :root:not([data-theme]) .metal-s7 { stop-color: #4a5564; }
+  :root:not([data-theme]) .metal-s8 { stop-color: #7a8698; }
 }
 
-:root[data-theme="light"] .metal-s1 { stop-color: #ffffff; }
-:root[data-theme="light"] .metal-s2 { stop-color: #eef2f8; }
-:root[data-theme="light"] .metal-s3 { stop-color: #c4cad6; }
-:root[data-theme="light"] .metal-s4 { stop-color: #505868; }
-:root[data-theme="light"] .metal-s5 { stop-color: #b0b8c8; }
-:root[data-theme="light"] .metal-s6 { stop-color: #f0f4fa; }
-:root[data-theme="light"] .metal-s7 { stop-color: #788090; }
-:root[data-theme="light"] .metal-s8 { stop-color: #ffffff; }
+:root[data-theme="light"] .metal-s1 { stop-color: #7a8698; }
+:root[data-theme="light"] .metal-s2 { stop-color: #a8b4c4; }
+:root[data-theme="light"] .metal-s3 { stop-color: #5c6678; }
+:root[data-theme="light"] .metal-s4 { stop-color: #343c48; }
+:root[data-theme="light"] .metal-s5 { stop-color: #788898; }
+:root[data-theme="light"] .metal-s6 { stop-color: #b0bcc8; }
+:root[data-theme="light"] .metal-s7 { stop-color: #4a5564; }
+:root[data-theme="light"] .metal-s8 { stop-color: #7a8698; }
 
 @keyframes metal-shimmer {
   0%, 100% { background-position: 0% 50%; }

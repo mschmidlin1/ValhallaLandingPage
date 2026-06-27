@@ -32,7 +32,7 @@ body {
   background-clip: text;
   color: transparent;
   animation: metal-shimmer 7s ease-in-out infinite;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(var(--metal-shadow));
 }
 
 .theme-toggle {
@@ -161,6 +161,29 @@ body {
   width: 24px;
   height: 24px;
   transition: filter 0.2s ease;
+}
+
+/* Light mode: slightly heavier strokes + depth so silver icons read on white */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .link-card__icon svg,
+  :root:not([data-theme]) .theme-toggle svg {
+    stroke-width: 2.25;
+    filter: drop-shadow(0 0.5px 1px rgba(52, 60, 72, 0.3));
+  }
+
+  :root:not([data-theme]) .link-card::before {
+    opacity: 0.85;
+  }
+}
+
+:root[data-theme="light"] .link-card__icon svg,
+:root[data-theme="light"] .theme-toggle svg {
+  stroke-width: 2.25;
+  filter: drop-shadow(0 0.5px 1px rgba(52, 60, 72, 0.3));
+}
+
+:root[data-theme="light"] .link-card::before {
+  opacity: 0.85;
 }
 
 .link-card__title {
