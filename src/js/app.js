@@ -68,7 +68,7 @@ VALHALLA_LINKS.forEach((link) => {
   a.innerHTML = `
     <span class="link-card__icon" aria-hidden="true">${getIconSvg(link.icon)}</span>
     <p class="link-card__title">${link.title}</p>
-    <p class="link-card__subtitle">${link.subtitle}</p>
+    <p class="link-card__subtitle">${link.description}</p>
   `;
 
   linkGrid.appendChild(a);
