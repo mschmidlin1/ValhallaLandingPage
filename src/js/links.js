@@ -2,7 +2,7 @@
 // Update a URL here once and the page picks it up.
 //
 // `status` is `"live"` for external links or `"coming-soon"` for placeholders
-// (coming-soon gauges look the same but do not navigate).
+// (coming-soon cards look the same but do not navigate).
 // Placeholder URLs (`#` or empty) show the coming-soon banner on click.
 
 export function hasNavigableUrl(link) {
@@ -13,6 +13,7 @@ export function hasNavigableUrl(link) {
 export const VALHALLA_LINKS = [
   {
     id: "portfolio",
+    icon: "globe",
     title: "Portfolio",
     subtitle: "michaelschmidlin.com",
     description: "Personal website and project showcase",
@@ -21,6 +22,7 @@ export const VALHALLA_LINKS = [
   },
   {
     id: "trendline",
+    icon: "chart-line",
     title: "Trendline",
     subtitle: "Market Dashboard",
     description: "Real-time market trend analysis",
@@ -29,6 +31,7 @@ export const VALHALLA_LINKS = [
   },
   {
     id: "resume",
+    icon: "file-text",
     title: "Resume Customizer",
     subtitle: "Tailored Applications",
     description: "AI-assisted resume tuning",
@@ -37,6 +40,7 @@ export const VALHALLA_LINKS = [
   },
   {
     id: "budget",
+    icon: "wallet",
     title: "Budget Analysis",
     subtitle: "Financial Insights",
     description: "Personal finance dashboard",

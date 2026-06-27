@@ -1,5 +1,5 @@
-/* Valhalla shared font import - Google Fonts.
-   Cinzel: chiseled display face for the wordmark and titles.
-   IM Fell English: warm period serif for body copy.
-   Special Elite: typewriter face for terminal/teletype accents. */
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=IM+Fell+English:ital@0;1&family=Special+Elite&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}

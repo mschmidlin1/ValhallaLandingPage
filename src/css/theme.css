@@ -1,114 +1,106 @@
-/* Valhalla shared theme - the landing page pulls from this so the palette stays
-   consistent and a single change here propagates everywhere. */
-:root {
-  /* Backgrounds */
-  --bg-grey: #1a1a1d;
-  --bg-grey-2: #25262b;
-  --bg-grey-3: #2f3036;
-  --bg-panel: #1e1f23;
-
-  /* Brass / copper / gold family */
-  --brass: #b08d57;
-  --brass-light: #d4b074;
-  --brass-dark: #7a5e36;
-  --copper: #b87333;
-  --copper-light: #d68a4a;
-  --copper-dark: #7d4a1d;
-  --gold: #d4af37;
-  --gold-light: #f0cf57;
-  --gold-dark: #9a7e22;
-
-  /* Accents */
-  --ember: #ff7a18;
-  --ember-glow: #ffb56b;
-  --steam: #d8d4cc;
-  --ink: #1a0f06;
-
-  /* Text */
-  --text-primary: #e8dcc4;
-  --text-secondary: #b9a987;
-  --text-dim: #7a6e58;
-
-  /* Effects */
-  --shadow-deep: 0 10px 30px rgba(0, 0, 0, 0.6);
-  --shadow-brass: 0 0 24px rgba(212, 175, 55, 0.25);
-  --shadow-ember: 0 0 32px rgba(255, 122, 24, 0.45);
-  --inset-rivet: inset 0 0 0 2px rgba(0, 0, 0, 0.4),
-                 inset 0 2px 4px rgba(255, 220, 160, 0.15);
-
-  /* Typography */
-  --font-display: "Cinzel", serif;
-  --font-body: "IM Fell English", "Garamond", serif;
-  --font-mono: "Special Elite", "Courier New", monospace;
-
-  /* Layout */
-  --frame-radius: 6px;
-  --plaque-radius: 10px;
-}
+/* Valhalla theme tokens — Robinhood Banking–inspired metallics.
+   Dark: warm deep gold (not flat yellow). Light: champagne platinum (not cold grey). */
 
 * { box-sizing: border-box; }
+
+/* --- Dark tokens (warm gold accents) ----------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #110e08;
+    --bg-elevated: #1c1a16;
+    --bg-hover: #252219;
+    --accent: #b9ad8b;
+    --accent-bright: #dad3c0;
+    --accent-deep: #94814c;
+    --accent-highlight: #fde5b6;
+    --accent-subtle: rgba(185, 173, 139, 0.14);
+    --accent-gradient: linear-gradient(135deg, #fde5b6 0%, #b9ad8b 42%, #94814c 100%);
+    --text-primary: #f0ebe3;
+    --text-secondary: #b8b0a4;
+    --text-dim: #7a7268;
+    --border: rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(148, 129, 76, 0.45);
+    --shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
+    --focus-ring: rgba(218, 211, 192, 0.45);
+    --toast-bg: #1c1a16;
+    --toast-border: rgba(148, 129, 76, 0.35);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #110e08;
+  --bg-elevated: #1c1a16;
+  --bg-hover: #252219;
+  --accent: #b9ad8b;
+  --accent-bright: #dad3c0;
+  --accent-deep: #94814c;
+  --accent-highlight: #fde5b6;
+  --accent-subtle: rgba(185, 173, 139, 0.14);
+  --accent-gradient: linear-gradient(135deg, #fde5b6 0%, #b9ad8b 42%, #94814c 100%);
+  --text-primary: #f0ebe3;
+  --text-secondary: #b8b0a4;
+  --text-dim: #7a7268;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(148, 129, 76, 0.45);
+  --shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
+  --focus-ring: rgba(218, 211, 192, 0.45);
+  --toast-bg: #1c1a16;
+  --toast-border: rgba(148, 129, 76, 0.35);
+}
+
+/* --- Light tokens (champagne platinum accents) ------------------------- */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg: #f7f5f1;
+    --bg-elevated: #ffffff;
+    --bg-hover: #f0ece6;
+    --accent: #8a8478;
+    --accent-bright: #d4d0c9;
+    --accent-deep: #6b665c;
+    --accent-highlight: #ebe8e2;
+    --accent-subtle: rgba(138, 132, 120, 0.12);
+    --accent-gradient: linear-gradient(135deg, #ebe8e2 0%, #b8b2a8 42%, #8a8478 100%);
+    --text-primary: #1c1a16;
+    --text-secondary: #5c574f;
+    --text-dim: #9a948a;
+    --border: rgba(28, 26, 22, 0.08);
+    --border-strong: rgba(138, 132, 120, 0.4);
+    --shadow: 0 4px 24px rgba(28, 26, 22, 0.07);
+    --focus-ring: rgba(138, 132, 120, 0.35);
+    --toast-bg: #ffffff;
+    --toast-border: rgba(138, 132, 120, 0.28);
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #f7f5f1;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f0ece6;
+  --accent: #8a8478;
+  --accent-bright: #d4d0c9;
+  --accent-deep: #6b665c;
+  --accent-highlight: #ebe8e2;
+  --accent-subtle: rgba(138, 132, 120, 0.12);
+  --accent-gradient: linear-gradient(135deg, #ebe8e2 0%, #b8b2a8 42%, #8a8478 100%);
+  --text-primary: #1c1a16;
+  --text-secondary: #5c574f;
+  --text-dim: #9a948a;
+  --border: rgba(28, 26, 22, 0.08);
+  --border-strong: rgba(138, 132, 120, 0.4);
+  --shadow: 0 4px 24px rgba(28, 26, 22, 0.07);
+  --focus-ring: rgba(138, 132, 120, 0.35);
+  --toast-bg: #ffffff;
+  --toast-border: rgba(138, 132, 120, 0.28);
+}
 
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg-grey);
+  background: var(--bg);
   color: var(--text-primary);
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  scroll-behavior: smooth;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-a { color: var(--gold); text-decoration: none; }
-a:hover { color: var(--gold-light); }
-
-/* Shared utility - the Valhalla wordmark in upper-left */
-.valhalla-mark {
-  position: fixed;
-  top: 24px;
-  left: 32px;
-  z-index: 100;
-  font-family: var(--font-display);
-  font-size: 2.6rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  background: linear-gradient(180deg, var(--gold-light) 0%, var(--brass) 50%, var(--brass-dark) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
-  pointer-events: none;
-  user-select: none;
-}
-
-.valhalla-mark::after {
-  content: "";
-  display: block;
-  height: 2px;
-  margin-top: 4px;
-  background: linear-gradient(90deg, transparent 0%, var(--brass) 30%, var(--gold) 50%, var(--brass) 70%, transparent 100%);
-}
-
-/* Reusable text helpers */
-.t-mono { font-family: var(--font-mono); }
-.t-display { font-family: var(--font-display); letter-spacing: 0.1em; }
-.t-dim { color: var(--text-dim); }
-
-@media (max-width: 768px) {
-  .valhalla-mark {
-    font-size: clamp(1.35rem, 5.5vw, 2.6rem);
-    top: clamp(12px, 3vh, 24px);
-    left: clamp(12px, 4vw, 32px);
-  }
-}
-
-@media (max-width: 520px) {
-  .valhalla-mark {
-    /* Same placement as desktop — sits above the cog column via z-index */
-    left: 32px;
-    top: 24px;
-    font-size: clamp(1.35rem, 5.5vw, 2.6rem);
-    letter-spacing: 0.18em;
-    max-width: calc(100vw - 64px);
-  }
-}
+a { color: inherit; text-decoration: none; }

@@ -2,52 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Valhalla</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("valhalla-theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/theme.css?v=34" />
-  <link rel="stylesheet" href="css/styles.css?v=34" />
+  <link rel="stylesheet" href="css/theme.css?v=35" />
+  <link rel="stylesheet" href="css/styles.css?v=35" />
 </head>
 <body>
-  <div class="valhalla-mark">VALHALLA</div>
-
-  <!-- Full-height cog columns framing both sides of the viewport -->
-  <div class="cog-column cog-column-left" aria-hidden="true">
-    <svg id="cog-svg-left" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet"></svg>
-  </div>
-  <div class="cog-column cog-column-right" aria-hidden="true">
-    <svg id="cog-svg-right" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet"></svg>
-  </div>
-
-  <!-- Page-spanning pipe layer (sized to full document so vertical drops reach the page bottom) -->
-  <div class="pipe-layer" aria-hidden="true">
-    <svg class="gauge-pipe-network" id="gauge-pipe-network" aria-hidden="true"></svg>
-  </div>
+  <header class="site-header">
+    <h1 class="site-title">Valhalla</h1>
+    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle color theme"></button>
+  </header>
 
   <main class="page-main">
-    <section class="gauges-hub">
-      <div class="gauges" id="gauges"></div>
-    </section>
+    <div class="link-grid" id="link-grid"></div>
   </main>
 
-  <!-- WebGL fluid steam canvas — driven by the pipe valve vents. -->
-  <div class="steam-fluid-layer" aria-hidden="true"></div>
-
-  <!-- TEMPORARILY DISABLED — smokestacks paused while we iterate on the pipe network.
-  <div class="smokestacks" aria-hidden="true">
-    <div class="stack stack-a" data-stack-id="a"></div>
-    <div class="stack stack-b" data-stack-id="b"></div>
-  </div>
-  -->
-
   <div id="coming-soon-banner" class="coming-soon-banner" role="status" aria-live="polite" hidden>
-    <span class="coming-soon-banner__label t-mono">// STATUS //</span>
-    <span class="coming-soon-banner__message t-display">App coming soon!</span>
+    <span class="coming-soon-banner__message">App coming soon!</span>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script type="module" src="js/app.js?v=34"></script>
+  <script type="module" src="js/theme.js?v=35"></script>
+  <script type="module" src="js/app.js?v=35"></script>
 </body>
 </html>
