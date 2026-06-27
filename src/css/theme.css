@@ -1,29 +1,53 @@
-/* Valhalla theme tokens — Robinhood Banking–inspired metallics.
-   Dark: warm deep gold (not flat yellow). Light: champagne platinum (not cold grey). */
+/* Valhalla theme — metallic gold (dark) and platinum silver (light) with sheen. */
 
 * { box-sizing: border-box; }
 
-/* --- Dark tokens (warm gold accents) ----------------------------------- */
+/* Multi-stop gradients simulate specular highlights + shadow bands on brushed metal. */
+:root {
+  --gold-gradient: linear-gradient(
+    125deg,
+    #fffef5 0%,
+    #ffe9a8 7%,
+    #e8c547 18%,
+    #7a5a18 32%,
+    #d4af37 46%,
+    #f8ecc0 58%,
+    #a88428 72%,
+    #f0dc98 86%,
+    #fffef5 100%
+  );
+  --silver-gradient: linear-gradient(
+    125deg,
+    #ffffff 0%,
+    #eef2f8 7%,
+    #c4cad6 18%,
+    #505868 32%,
+    #b0b8c8 46%,
+    #f0f4fa 58%,
+    #788090 72%,
+    #dce2ec 86%,
+    #ffffff 100%
+  );
+}
+
+/* --- Dark tokens (gold) ------------------------------------------------ */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     --bg: #110e08;
     --bg-elevated: #1c1a16;
     --bg-hover: #252219;
-    --accent: #b9ad8b;
-    --accent-bright: #dad3c0;
-    --accent-deep: #94814c;
-    --accent-highlight: #fde5b6;
-    --accent-subtle: rgba(185, 173, 139, 0.14);
-    --accent-gradient: linear-gradient(135deg, #fde5b6 0%, #b9ad8b 42%, #94814c 100%);
+    --accent-gradient: var(--gold-gradient);
+    --accent-glow: rgba(232, 197, 71, 0.35);
+    --accent-subtle: rgba(212, 175, 55, 0.12);
     --text-primary: #f0ebe3;
     --text-secondary: #b8b0a4;
     --text-dim: #7a7268;
     --border: rgba(255, 255, 255, 0.07);
-    --border-strong: rgba(148, 129, 76, 0.45);
+    --border-strong: rgba(212, 175, 55, 0.35);
     --shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
-    --focus-ring: rgba(218, 211, 192, 0.45);
+    --focus-ring: rgba(248, 236, 192, 0.45);
     --toast-bg: #1c1a16;
-    --toast-border: rgba(148, 129, 76, 0.35);
+    --toast-border: rgba(212, 175, 55, 0.3);
   }
 }
 
@@ -31,44 +55,38 @@
   --bg: #110e08;
   --bg-elevated: #1c1a16;
   --bg-hover: #252219;
-  --accent: #b9ad8b;
-  --accent-bright: #dad3c0;
-  --accent-deep: #94814c;
-  --accent-highlight: #fde5b6;
-  --accent-subtle: rgba(185, 173, 139, 0.14);
-  --accent-gradient: linear-gradient(135deg, #fde5b6 0%, #b9ad8b 42%, #94814c 100%);
+  --accent-gradient: var(--gold-gradient);
+  --accent-glow: rgba(232, 197, 71, 0.35);
+  --accent-subtle: rgba(212, 175, 55, 0.12);
   --text-primary: #f0ebe3;
   --text-secondary: #b8b0a4;
   --text-dim: #7a7268;
   --border: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(148, 129, 76, 0.45);
+  --border-strong: rgba(212, 175, 55, 0.35);
   --shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
-  --focus-ring: rgba(218, 211, 192, 0.45);
+  --focus-ring: rgba(248, 236, 192, 0.45);
   --toast-bg: #1c1a16;
-  --toast-border: rgba(148, 129, 76, 0.35);
+  --toast-border: rgba(212, 175, 55, 0.3);
 }
 
-/* --- Light tokens (champagne platinum accents) ------------------------- */
+/* --- Light tokens (platinum silver) ------------------------------------ */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     --bg: #f7f5f1;
     --bg-elevated: #ffffff;
     --bg-hover: #f0ece6;
-    --accent: #8a8478;
-    --accent-bright: #d4d0c9;
-    --accent-deep: #6b665c;
-    --accent-highlight: #ebe8e2;
-    --accent-subtle: rgba(138, 132, 120, 0.12);
-    --accent-gradient: linear-gradient(135deg, #ebe8e2 0%, #b8b2a8 42%, #8a8478 100%);
+    --accent-gradient: var(--silver-gradient);
+    --accent-glow: rgba(176, 184, 200, 0.4);
+    --accent-subtle: rgba(120, 128, 144, 0.1);
     --text-primary: #1c1a16;
     --text-secondary: #5c574f;
     --text-dim: #9a948a;
     --border: rgba(28, 26, 22, 0.08);
-    --border-strong: rgba(138, 132, 120, 0.4);
+    --border-strong: rgba(120, 128, 144, 0.35);
     --shadow: 0 4px 24px rgba(28, 26, 22, 0.07);
-    --focus-ring: rgba(138, 132, 120, 0.35);
+    --focus-ring: rgba(176, 184, 200, 0.45);
     --toast-bg: #ffffff;
-    --toast-border: rgba(138, 132, 120, 0.28);
+    --toast-border: rgba(120, 128, 144, 0.25);
   }
 }
 
@@ -76,21 +94,65 @@
   --bg: #f7f5f1;
   --bg-elevated: #ffffff;
   --bg-hover: #f0ece6;
-  --accent: #8a8478;
-  --accent-bright: #d4d0c9;
-  --accent-deep: #6b665c;
-  --accent-highlight: #ebe8e2;
-  --accent-subtle: rgba(138, 132, 120, 0.12);
-  --accent-gradient: linear-gradient(135deg, #ebe8e2 0%, #b8b2a8 42%, #8a8478 100%);
+  --accent-gradient: var(--silver-gradient);
+  --accent-glow: rgba(176, 184, 200, 0.4);
+  --accent-subtle: rgba(120, 128, 144, 0.1);
   --text-primary: #1c1a16;
   --text-secondary: #5c574f;
   --text-dim: #9a948a;
   --border: rgba(28, 26, 22, 0.08);
-  --border-strong: rgba(138, 132, 120, 0.4);
+  --border-strong: rgba(120, 128, 144, 0.35);
   --shadow: 0 4px 24px rgba(28, 26, 22, 0.07);
-  --focus-ring: rgba(138, 132, 120, 0.35);
+  --focus-ring: rgba(176, 184, 200, 0.45);
   --toast-bg: #ffffff;
-  --toast-border: rgba(138, 132, 120, 0.28);
+  --toast-border: rgba(120, 128, 144, 0.25);
+}
+
+/* SVG gradient stops — gold (dark mode) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .metal-s1 { stop-color: #fffef5; }
+  :root:not([data-theme]) .metal-s2 { stop-color: #ffe9a8; }
+  :root:not([data-theme]) .metal-s3 { stop-color: #e8c547; }
+  :root:not([data-theme]) .metal-s4 { stop-color: #7a5a18; }
+  :root:not([data-theme]) .metal-s5 { stop-color: #d4af37; }
+  :root:not([data-theme]) .metal-s6 { stop-color: #f8ecc0; }
+  :root:not([data-theme]) .metal-s7 { stop-color: #a88428; }
+  :root:not([data-theme]) .metal-s8 { stop-color: #fffef5; }
+}
+
+:root[data-theme="dark"] .metal-s1 { stop-color: #fffef5; }
+:root[data-theme="dark"] .metal-s2 { stop-color: #ffe9a8; }
+:root[data-theme="dark"] .metal-s3 { stop-color: #e8c547; }
+:root[data-theme="dark"] .metal-s4 { stop-color: #7a5a18; }
+:root[data-theme="dark"] .metal-s5 { stop-color: #d4af37; }
+:root[data-theme="dark"] .metal-s6 { stop-color: #f8ecc0; }
+:root[data-theme="dark"] .metal-s7 { stop-color: #a88428; }
+:root[data-theme="dark"] .metal-s8 { stop-color: #fffef5; }
+
+/* SVG gradient stops — platinum silver (light mode) */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .metal-s1 { stop-color: #ffffff; }
+  :root:not([data-theme]) .metal-s2 { stop-color: #eef2f8; }
+  :root:not([data-theme]) .metal-s3 { stop-color: #c4cad6; }
+  :root:not([data-theme]) .metal-s4 { stop-color: #505868; }
+  :root:not([data-theme]) .metal-s5 { stop-color: #b0b8c8; }
+  :root:not([data-theme]) .metal-s6 { stop-color: #f0f4fa; }
+  :root:not([data-theme]) .metal-s7 { stop-color: #788090; }
+  :root:not([data-theme]) .metal-s8 { stop-color: #ffffff; }
+}
+
+:root[data-theme="light"] .metal-s1 { stop-color: #ffffff; }
+:root[data-theme="light"] .metal-s2 { stop-color: #eef2f8; }
+:root[data-theme="light"] .metal-s3 { stop-color: #c4cad6; }
+:root[data-theme="light"] .metal-s4 { stop-color: #505868; }
+:root[data-theme="light"] .metal-s5 { stop-color: #b0b8c8; }
+:root[data-theme="light"] .metal-s6 { stop-color: #f0f4fa; }
+:root[data-theme="light"] .metal-s7 { stop-color: #788090; }
+:root[data-theme="light"] .metal-s8 { stop-color: #ffffff; }
+
+@keyframes metal-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 html, body {

@@ -14,10 +14,26 @@
     })();
   </script>
   <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/theme.css?v=35" />
-  <link rel="stylesheet" href="css/styles.css?v=35" />
+  <link rel="stylesheet" href="css/theme.css?v=36" />
+  <link rel="stylesheet" href="css/styles.css?v=36" />
 </head>
 <body>
+  <!-- Shared SVG gradient for metallic icons and accents -->
+  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" class="svg-defs">
+    <defs>
+      <linearGradient id="valhalla-metal" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" class="metal-s1"/>
+        <stop offset="8%" class="metal-s2"/>
+        <stop offset="22%" class="metal-s3"/>
+        <stop offset="38%" class="metal-s4"/>
+        <stop offset="52%" class="metal-s5"/>
+        <stop offset="68%" class="metal-s6"/>
+        <stop offset="82%" class="metal-s7"/>
+        <stop offset="100%" class="metal-s8"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
   <header class="site-header">
     <h1 class="site-title">Valhalla</h1>
     <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle color theme"></button>
@@ -31,7 +47,7 @@
     <span class="coming-soon-banner__message">App coming soon!</span>
   </div>
 
-  <script type="module" src="js/theme.js?v=35"></script>
-  <script type="module" src="js/app.js?v=35"></script>
+  <script type="module" src="js/theme.js?v=36"></script>
+  <script type="module" src="js/app.js?v=36"></script>
 </body>
 </html>
