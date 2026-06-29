@@ -1,0 +1,44 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    env:
+      KUBECONFIG: /home/mike/.kube/config
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push image
+        run: |
+          IMAGE=ghcr.io/mschmidlin1/valhallalandingpage
+          docker build -t "${IMAGE}:dev-${{ github.sha }}" -t "${IMAGE}:dev-latest" .
+          docker push "${IMAGE}:dev-${{ github.sha }}"
+          docker push "${IMAGE}:dev-latest"
+
+      - name: Apply Kubernetes manifests
+        run: kubectl apply -k k8s/dev/
+
+      - name: Roll out new image
+        run: |
+          kubectl set image deployment/valhallalandingpage \
+            app=ghcr.io/mschmidlin1/valhallalandingpage:dev-${{ github.sha }} \
+            -n valhallalandingpage-dev
+          kubectl rollout status deployment/valhallalandingpage \
+            -n valhallalandingpage-dev \
+            --timeout=5m
