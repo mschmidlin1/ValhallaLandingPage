@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Favicon options — Schmid-Lab</title>
+  <link rel="stylesheet" href="../css/fonts.css" />
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-sans, system-ui, sans-serif);
+      background: #110e08;
+      color: #f8ecc0;
+      padding: 2rem 1.5rem 3rem;
+    }
+
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .lead {
+      margin: 0 0 2rem;
+      color: #c9b87a;
+      max-width: 42rem;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      max-width: 1100px;
+    }
+
+    .card {
+      background: #1c1a16;
+      border: 1px solid #3a3428;
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .card h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1.05rem;
+    }
+
+    .card p {
+      margin: 0 0 1rem;
+      font-size: 0.88rem;
+      color: #a89868;
+      line-height: 1.45;
+    }
+
+    .sizes {
+      display: flex;
+      align-items: flex-end;
+      gap: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .size {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      color: #8a7d58;
+    }
+
+    .size img {
+      image-rendering: pixelated;
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px #3a3428;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button,
+    a.btn {
+      appearance: none;
+      border: 1px solid #5a4f32;
+      background: #252219;
+      color: #f8ecc0;
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      font: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    button:hover,
+    a.btn:hover {
+      background: #302a1f;
+      border-color: #d4af37;
+    }
+
+    .active-tab {
+      margin-top: 2rem;
+      padding: 1rem 1.25rem;
+      background: #1c1a16;
+      border: 1px solid #3a3428;
+      border-radius: 12px;
+      max-width: 42rem;
+    }
+
+    .active-tab strong {
+      color: #ffe9a8;
+    }
+
+    code {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.85em;
+      color: #ffe9a8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Favicon options</h1>
+  <p class="lead">
+    Compare how each icon reads at real favicon sizes. Click <strong>Try in tab</strong> to preview one in the browser tab.
+    When you pick a winner, tell me which one and I'll set it as the live favicon.
+  </p>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="active-tab" id="active-tab" hidden>
+  </div>
+
+  <script>
+    const OPTIONS = [
+      {
+        id: "gear",
+        name: "Gear",
+        file: "gear.svg",
+        blurb: "Steampunk / engine-room feel. Machinery and services always running.",
+      },
+      {
+        id: "server-stack",
+        name: "Server stack",
+        file: "server-stack.svg",
+        blurb: "Classic homelab symbol — a small rack with status lights.",
+      },
+      {
+        id: "network-hub",
+        name: "Network hub",
+        file: "network-hub.svg",
+        blurb: "Central node with spokes — good for a links dashboard.",
+      },
+      {
+        id: "gauge",
+        name: "Gauge",
+        file: "gauge.svg",
+        blurb: "Steampunk dial with a needle — monitoring and uptime vibes.",
+      },
+      {
+        id: "chip",
+        name: "Chip",
+        file: "chip.svg",
+        blurb: "Processor with pins — tech lab without tying to one tool.",
+      },
+    ];
+
+    const grid = document.getElementById("grid");
+    const activeTab = document.getElementById("active-tab");
+    let faviconLink = document.querySelector('link[rel="icon"]');
+
+    if (!faviconLink) {
+      faviconLink = document.createElement("link");
+      faviconLink.rel = "icon";
+      faviconLink.type = "image/svg+xml";
+      document.head.appendChild(faviconLink);
+    }
+
+    function setTabIcon(file) {
+      faviconLink.href = `${file}?v=${Date.now()}`;
+      activeTab.hidden = false;
+      activeTab.innerHTML = `Tab preview active: <strong>${file}</strong>`;
+    }
+
+    OPTIONS.forEach((opt) => {
+      const card = document.createElement("article");
+      card.className = "card";
+      card.innerHTML = `
+        <h2>${opt.name}</h2>
+        <p>${opt.blurb}</p>
+        <div class="sizes">
+          <div class="size">
+            <img src="${opt.file}" width="16" height="16" alt="" />
+            <span>16px</span>
+          </div>
+          <div class="size">
+            <img src="${opt.file}" width="32" height="32" alt="" />
+            <span>32px</span>
+          </div>
+          <div class="size">
+            <img src="${opt.file}" width="64" height="64" alt="" />
+            <span>64px</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" data-preview="${opt.file}">Try in tab</button>
+          <a class="btn" href="${opt.file}" target="_blank" rel="noopener">Open SVG</a>
+        </div>
+      `;
+      card.querySelector("[data-preview]").addEventListener("click", () => setTabIcon(opt.file));
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
