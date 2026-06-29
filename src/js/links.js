@@ -60,10 +60,10 @@ export const VALHALLA_LINKS = [
     id: "dr-jam",
     icon: "music",
     title: "Dr. JAM",
-    subtitle: "Music",
-    description: "A music based memorial",
-    url: "#",
-    status: "coming-soon",
+    subtitle: "dr-jam.schmidlin.casa",
+    description: "dr-jam.schmidlin.casa",
+    url: "https://dr-jam.schmidlin.casa",
+    status: "live",
   },
 ];
 

@@ -4,12 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Schmid-Lab</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" id="favicon" href="favicon-dark.svg" type="image/svg+xml" />
   <script>
     (function () {
       try {
         var t = localStorage.getItem("valhalla-theme");
+        var theme = t === "light" || t === "dark"
+          ? t
+          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+        var link = document.getElementById("favicon");
+        if (link) link.href = theme === "light" ? "favicon-light.svg" : "favicon-dark.svg";
       } catch (e) {}
     })();
   </script>
@@ -47,7 +52,7 @@
     <span class="coming-soon-banner__message">App coming soon!</span>
   </div>
 
-  <script type="module" src="js/theme.js?v=36"></script>
+  <script type="module" src="js/theme.js?v=38"></script>
   <script type="module" src="js/app.js?v=37"></script>
 </body>
 </html>

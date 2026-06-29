@@ -24,6 +24,19 @@ function getEffectiveTheme() {
   return getSavedTheme() ?? getSystemTheme();
 }
 
+function getFaviconHref(theme) {
+  return theme === "light" ? "favicon-light.svg" : "favicon-dark.svg";
+}
+
+function updateFavicon() {
+  const link = document.querySelector('link[rel="icon"]');
+  if (!link) return;
+  const href = getFaviconHref(getEffectiveTheme());
+  if (!link.href.endsWith(href)) {
+    link.href = href;
+  }
+}
+
 function applySavedTheme() {
   const saved = getSavedTheme();
   if (saved) {
@@ -31,6 +44,7 @@ function applySavedTheme() {
   } else {
     delete document.documentElement.dataset.theme;
   }
+  updateFavicon();
 }
 
 function updateToggleButton(toggle) {
@@ -55,10 +69,14 @@ function initThemeToggle() {
     }
     document.documentElement.dataset.theme = next;
     updateToggleButton(toggle);
+    updateFavicon();
   });
 
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    if (!getSavedTheme()) updateToggleButton(toggle);
+    if (!getSavedTheme()) {
+      updateToggleButton(toggle);
+      updateFavicon();
+    }
   });
 }
 
