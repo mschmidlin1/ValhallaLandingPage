@@ -15,9 +15,9 @@ export const VALHALLA_LINKS = [
     id: "portfolio",
     icon: "user",
     title: "Michael's Portfolio",
-    subtitle: "michaelschmidlin.com",
+    subtitle: "michael.schmidlin.casa",
     description: "Professional Portfolio",
-    url: "https://michaelschmidlin.com",
+    url: "https://michael.schmidlin.casa",
     status: "live",
   },
   {

@@ -24,7 +24,7 @@ The gauges on the page read from [`src/js/links.js`](src/js/links.js). Edit that
 
 | Tool | URL | Status |
 |------|-----|--------|
-| Portfolio | https://michaelschmidlin.com | live |
+| Portfolio | https://michael.schmidlin.casa | live |
 | Trendline Dashboard | (pending) | coming soon |
 | Resume Customizer | (pending) | coming soon |
 | Budget Analysis | (pending) | coming soon |
