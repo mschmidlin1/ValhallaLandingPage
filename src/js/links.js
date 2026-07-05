@@ -42,10 +42,10 @@ export const VALHALLA_LINKS = [
     id: "budget",
     icon: "wallet",
     title: "Budget Analysis",
-    subtitle: "Financial Insights",
+    subtitle: "budget-analysis.schmidlin.casa",
     description: "Personal Finance",
-    url: "#",
-    status: "coming-soon",
+    url: "https://budget-analysis.schmidlin.casa",
+    status: "live",
   },
   {
     id: "madeleine-portfolio",
