@@ -33,10 +33,10 @@ export const VALHALLA_LINKS = [
     id: "resume",
     icon: "file-text",
     title: "Resume Customizer",
-    subtitle: "Tailored Applications",
+    subtitle: "customizer.schmidlin.casa",
     description: "Tailor Resume",
-    url: "#",
-    status: "coming-soon",
+    url: "https://customizer.schmidlin.casa",
+    status: "live",
   },
   {
     id: "budget",
