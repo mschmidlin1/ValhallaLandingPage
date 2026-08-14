@@ -26,7 +26,7 @@ export const VALHALLA_LINKS = [
     title: "Trendline",
     subtitle: "Market Dashboard",
     description: "Algorithmic Trading",
-    url: "#", // resolved at runtime from mschmidlin1/TrendLine README (see trendline-link.js)
+    url: "#", // README URL lookup in trendline-link.js is paused while under construction
     status: "coming-soon",
   },
   {

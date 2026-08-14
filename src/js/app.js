@@ -1,6 +1,5 @@
 import { VALHALLA_LINKS, hasNavigableUrl } from "./links.js";
 import { getIconSvg } from "./icons.js";
-import { fetchTrendlineUrl } from "./trendline-link.js";
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -34,15 +33,6 @@ function onComingSoonClick(e) {
   showComingSoonBanner();
 }
 
-function activateLinkCard(cardEl, url) {
-  cardEl.href = url;
-  cardEl.target = "_blank";
-  cardEl.rel = "noopener noreferrer";
-  cardEl.dataset.status = "live";
-  cardEl.classList.remove("link-card--coming-soon");
-  cardEl.removeEventListener("click", onComingSoonClick);
-}
-
 const linkGrid = document.getElementById("link-grid");
 if (!linkGrid) throw new Error("link-grid element not found");
 
@@ -72,10 +62,4 @@ VALHALLA_LINKS.forEach((link) => {
   `;
 
   linkGrid.appendChild(a);
-});
-
-fetchTrendlineUrl().then((url) => {
-  if (!url) return;
-  const card = linkGrid.querySelector('[data-link-id="trendline"]');
-  if (card) activateLinkCard(card, url);
 });
