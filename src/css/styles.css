@@ -105,6 +105,15 @@ body {
   overflow: hidden;
 }
 
+button.link-card {
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
 /* Metallic sheen line along the top edge of each card */
 .link-card::before {
   content: "";
@@ -228,7 +237,6 @@ body {
   font-size: 0.9375rem;
   font-weight: 500;
   color: var(--text-primary);
-  white-space: nowrap;
 }
 
 /* --- Tablet ------------------------------------------------------------- */

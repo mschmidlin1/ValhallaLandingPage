@@ -30,6 +30,7 @@ function showComingSoonBanner() {
 
 function onComingSoonClick(e) {
   e.preventDefault();
+  e.stopPropagation();
   showComingSoonBanner();
 }
 
@@ -37,29 +38,27 @@ const linkGrid = document.getElementById("link-grid");
 if (!linkGrid) throw new Error("link-grid element not found");
 
 VALHALLA_LINKS.forEach((link) => {
-  const a = document.createElement("a");
-  a.className = "link-card";
-  a.dataset.status = link.status;
-  a.dataset.linkId = link.id;
+  const isComingSoon = link.status === "coming-soon" || !hasNavigableUrl(link);
+  const card = document.createElement(isComingSoon ? "button" : "a");
+  card.className = "link-card";
+  card.dataset.status = link.status;
+  card.dataset.linkId = link.id;
 
-  if (!hasNavigableUrl(link)) {
-    a.classList.add("link-card--coming-soon");
-  }
-
-  if (hasNavigableUrl(link)) {
-    a.href = link.url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
+  if (isComingSoon) {
+    card.type = "button";
+    card.classList.add("link-card--coming-soon");
+    card.addEventListener("click", onComingSoonClick);
   } else {
-    a.href = "#";
-    a.addEventListener("click", onComingSoonClick);
+    card.href = link.url;
+    card.target = "_blank";
+    card.rel = "noopener noreferrer";
   }
 
-  a.innerHTML = `
+  card.innerHTML = `
     <span class="link-card__icon" aria-hidden="true">${getIconSvg(link.icon)}</span>
     <p class="link-card__title">${link.title}</p>
     <p class="link-card__subtitle">${link.description}</p>
   `;
 
-  linkGrid.appendChild(a);
+  linkGrid.appendChild(card);
 });

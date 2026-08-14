@@ -1,5 +1,6 @@
 // Fetches the live Trendline app URL from the TrendLine repo README.
 // README format: "Current link: https://..."
+// Not imported while Trendline is under construction (see app.js / links.js).
 
 const TRENDLINE_README_URL =
   "https://raw.githubusercontent.com/mschmidlin1/TrendLine/main/README.md";
