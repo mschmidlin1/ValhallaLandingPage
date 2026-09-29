@@ -24,10 +24,10 @@ export const VALHALLA_LINKS = [
     id: "trendline",
     icon: "chart-line",
     title: "Trendline",
-    subtitle: "Market Dashboard",
+    subtitle: "trendline.schmidlin.casa",
     description: "Algorithmic Trading",
-    url: "#", // README URL lookup in trendline-link.js is paused while under construction
-    status: "coming-soon",
+    url: "https://trendline.schmidlin.casa",
+    status: "live",
   },
   {
     id: "resume",
