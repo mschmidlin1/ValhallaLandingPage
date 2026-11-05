@@ -4,6 +4,9 @@
 // `status` is `"live"` for external links or `"coming-soon"` for placeholders
 // (coming-soon cards look the same but do not navigate).
 // Placeholder URLs (`#` or empty) show the coming-soon banner on click.
+//
+// `place` sets the hex tile in the cluster: `center`, then `n`, `ne`, `se`,
+// `s`, `sw`, `nw` clockwise from the top.
 
 export function hasNavigableUrl(link) {
   const url = (link?.url ?? "").trim();
@@ -19,6 +22,7 @@ export const VALHALLA_LINKS = [
     description: "Professional Portfolio",
     url: "https://michael.schmidlin.casa",
     status: "live",
+    place: "center",
   },
   {
     id: "trendline",
@@ -28,6 +32,7 @@ export const VALHALLA_LINKS = [
     description: "Algorithmic Trading",
     url: "https://trendline.schmidlin.casa",
     status: "live",
+    place: "n",
   },
   {
     id: "resume",
@@ -37,6 +42,7 @@ export const VALHALLA_LINKS = [
     description: "Tailor Resume",
     url: "https://customizer.schmidlin.casa",
     status: "live",
+    place: "ne",
   },
   {
     id: "budget",
@@ -46,6 +52,7 @@ export const VALHALLA_LINKS = [
     description: "Personal Finance",
     url: "https://budget-analysis.schmidlin.casa",
     status: "live",
+    place: "se",
   },
   {
     id: "madeleine-portfolio",
@@ -55,6 +62,7 @@ export const VALHALLA_LINKS = [
     description: "Professional Portfolio",
     url: "https://madeleine.schmidlin.casa",
     status: "live",
+    place: "s",
   },
   {
     id: "dr-jam",
@@ -64,6 +72,17 @@ export const VALHALLA_LINKS = [
     description: "Musical Memorial",
     url: "https://dr-jam.schmidlin.casa",
     status: "live",
+    place: "sw",
+  },
+  {
+    id: "slide-quest",
+    icon: "gamepad",
+    title: "Slide Quest!",
+    subtitle: "slide-quest.schmidlin.casa",
+    description: "Retro Game",
+    url: "https://slide-quest.schmidlin.casa",
+    status: "live",
+    place: "nw",
   },
 ];
 

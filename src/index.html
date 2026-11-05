@@ -19,8 +19,8 @@
     })();
   </script>
   <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/theme.css?v=39" />
-  <link rel="stylesheet" href="css/styles.css?v=39" />
+  <link rel="stylesheet" href="css/theme.css?v=40" />
+  <link rel="stylesheet" href="css/styles.css?v=44" />
 </head>
 <body>
   <!-- Shared SVG gradient for metallic icons and accents -->
@@ -36,6 +36,10 @@
         <stop offset="82%" class="metal-s7"/>
         <stop offset="100%" class="metal-s8"/>
       </linearGradient>
+      <!-- Flat-top hex with a small circular fillet at each vertex. Coordinates are 0–1 of the tile box. -->
+      <clipPath id="hex-round" clipPathUnits="objectBoundingBox">
+        <path d="M 0.23268 0.03464 A 0.06 0.06928 0 0 1 0.28464 0 L 0.71536 0 A 0.06 0.06928 0 0 1 0.76732 0.03464 L 0.98268 0.46536 A 0.06 0.06928 0 0 1 0.98268 0.53464 L 0.76732 0.96536 A 0.06 0.06928 0 0 1 0.71536 1 L 0.28464 1 A 0.06 0.06928 0 0 1 0.23268 0.96536 L 0.01732 0.53464 A 0.06 0.06928 0 0 1 0.01732 0.46536 Z"/>
+      </clipPath>
     </defs>
   </svg>
 
@@ -49,10 +53,10 @@
   </main>
 
   <div id="coming-soon-banner" class="coming-soon-banner" role="status" aria-live="polite" hidden>
-    <span class="coming-soon-banner__message">Trendline is under construction. Check back soon!</span>
+    <span class="coming-soon-banner__message">This app is on the way. Check back soon!</span>
   </div>
 
   <script type="module" src="js/theme.js?v=38"></script>
-  <script type="module" src="js/app.js?v=39"></script>
+  <script type="module" src="js/app.js?v=45"></script>
 </body>
 </html>
