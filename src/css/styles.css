@@ -75,28 +75,54 @@ body {
 .page-main {
   display: flex;
   flex-direction: column;
-  align-items: safe center;
-  justify-content: safe center;
-  min-height: calc(100dvh - 76px);
-  padding: 8px max(12px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100svh - 76px);
+  padding: 8px max(10px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+}
+
+@supports (justify-content: safe center) {
+  .page-main {
+    align-items: safe center;
+    justify-content: safe center;
+  }
 }
 
 /* Flat-top hex cluster: one tile in the center, six sharing its edges.
-   Width is point-to-point; height is flat-to-flat (√3/2 of width).
-   Neighbor centers sit one hex-height plus the gap away, so every shared
-   edge has the same gap. The metal gradient shows through the card padding
-   as the hex outline. */
+   .hive is the size container. The grid reads that width with cqw; querying
+   cqw on the sized element itself makes the cluster the wrong height.
+   The clip-path is written out on the tiles, not stored in a variable or an
+   SVG url(), because those get dropped and the tiles paint as rectangles. */
+.hive {
+  width: min(100%, 35rem);
+  margin-inline: auto;
+  container-type: inline-size;
+}
+
 .link-grid {
-  --hex-gap: clamp(6px, 0.7vw, 10px);
-  --hex-w: min(220px, calc((100vw - 32px - 1.7320508 * var(--hex-gap)) / 2.5));
+  --hex-gap: clamp(4px, 1.5cqw, 10px);
+  --hex-w: calc((100cqw - 1.7320508 * var(--hex-gap)) / 2.5);
   --hex-h: calc(var(--hex-w) * 0.86602540378);
   --hex-step: calc(var(--hex-h) + var(--hex-gap));
-  --hex-clip: url("#hex-round");
   position: relative;
-  width: calc(2.5 * var(--hex-w) + 1.7320508 * var(--hex-gap));
+  width: 100%;
   height: calc(3 * var(--hex-h) + 2 * var(--hex-gap));
-  max-width: 100%;
-  margin-inline: auto;
+}
+
+@supports not (width: 1cqw) {
+  .hive {
+    width: auto;
+    container-type: normal;
+  }
+
+  .link-grid {
+    --hex-gap: 8px;
+    --hex-w: min(210px, 28vw);
+    --hex-h: calc(var(--hex-w) * 0.86602540378);
+    --hex-step: calc(var(--hex-h) + var(--hex-gap));
+    width: min(100%, calc(2.5 * var(--hex-w) + 1.7320508 * var(--hex-gap)));
+    height: calc(3 * var(--hex-h) + 2 * var(--hex-gap));
+  }
 }
 
 /* --- Link tiles --------------------------------------------------------- */
@@ -113,7 +139,8 @@ body {
   padding: 0;
   border: 0;
   border-radius: 0;
-  clip-path: var(--hex-clip);
+  -webkit-clip-path: polygon(23.27% 3.46%, 24.01% 2.29%, 24.94% 1.32%, 26.02% 0.60%, 27.22% 0.15%, 28.46% 0%, 71.54% 0%, 72.78% 0.15%, 73.98% 0.60%, 75.06% 1.32%, 75.99% 2.29%, 76.73% 3.46%, 98.27% 46.54%, 98.78% 47.86%, 99.04% 49.28%, 99.04% 50.72%, 98.78% 52.14%, 98.27% 53.46%, 76.73% 96.54%, 75.99% 97.71%, 75.06% 98.68%, 73.98% 99.40%, 72.78% 99.85%, 71.54% 100%, 28.46% 100%, 27.22% 99.85%, 26.02% 99.40%, 24.94% 98.68%, 24.01% 97.71%, 23.27% 96.54%, 1.73% 53.46%, 1.22% 52.14%, 0.96% 50.72%, 0.96% 49.28%, 1.22% 47.86%, 1.73% 46.54%);
+  clip-path: polygon(23.27% 3.46%, 24.01% 2.29%, 24.94% 1.32%, 26.02% 0.60%, 27.22% 0.15%, 28.46% 0%, 71.54% 0%, 72.78% 0.15%, 73.98% 0.60%, 75.06% 1.32%, 75.99% 2.29%, 76.73% 3.46%, 98.27% 46.54%, 98.78% 47.86%, 99.04% 49.28%, 99.04% 50.72%, 98.78% 52.14%, 98.27% 53.46%, 76.73% 96.54%, 75.99% 97.71%, 75.06% 98.68%, 73.98% 99.40%, 72.78% 99.85%, 71.54% 100%, 28.46% 100%, 27.22% 99.85%, 26.02% 99.40%, 24.94% 98.68%, 24.01% 97.71%, 23.27% 96.54%, 1.73% 53.46%, 1.22% 52.14%, 0.96% 50.72%, 0.96% 49.28%, 1.22% 47.86%, 1.73% 46.54%);
   background: var(--accent-gradient);
   background-size: 250% 250%;
   animation: metal-shimmer 7s ease-in-out infinite;
@@ -168,7 +195,8 @@ button.link-card {
   position: absolute;
   inset: 0;
   z-index: 0;
-  clip-path: var(--hex-clip);
+  -webkit-clip-path: polygon(23.27% 3.46%, 24.01% 2.29%, 24.94% 1.32%, 26.02% 0.60%, 27.22% 0.15%, 28.46% 0%, 71.54% 0%, 72.78% 0.15%, 73.98% 0.60%, 75.06% 1.32%, 75.99% 2.29%, 76.73% 3.46%, 98.27% 46.54%, 98.78% 47.86%, 99.04% 49.28%, 99.04% 50.72%, 98.78% 52.14%, 98.27% 53.46%, 76.73% 96.54%, 75.99% 97.71%, 75.06% 98.68%, 73.98% 99.40%, 72.78% 99.85%, 71.54% 100%, 28.46% 100%, 27.22% 99.85%, 26.02% 99.40%, 24.94% 98.68%, 24.01% 97.71%, 23.27% 96.54%, 1.73% 53.46%, 1.22% 52.14%, 0.96% 50.72%, 0.96% 49.28%, 1.22% 47.86%, 1.73% 46.54%);
+  clip-path: polygon(23.27% 3.46%, 24.01% 2.29%, 24.94% 1.32%, 26.02% 0.60%, 27.22% 0.15%, 28.46% 0%, 71.54% 0%, 72.78% 0.15%, 73.98% 0.60%, 75.06% 1.32%, 75.99% 2.29%, 76.73% 3.46%, 98.27% 46.54%, 98.78% 47.86%, 99.04% 49.28%, 99.04% 50.72%, 98.78% 52.14%, 98.27% 53.46%, 76.73% 96.54%, 75.99% 97.71%, 75.06% 98.68%, 73.98% 99.40%, 72.78% 99.85%, 71.54% 100%, 28.46% 100%, 27.22% 99.85%, 26.02% 99.40%, 24.94% 98.68%, 24.01% 97.71%, 23.27% 96.54%, 1.73% 53.46%, 1.22% 52.14%, 0.96% 50.72%, 0.96% 49.28%, 1.22% 47.86%, 1.73% 46.54%);
   background: var(--bg-elevated);
   transform: scale(0.97);
   pointer-events: none;
@@ -181,10 +209,10 @@ button.link-card {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(3px, calc(var(--hex-w) * 0.028), 8px);
+  gap: clamp(2px, calc(var(--hex-w) * 0.022), 8px);
   width: 100%;
   height: 100%;
-  padding: 12% 13%;
+  padding: 15% 17% 12%;
 }
 
 .link-card:focus-visible {
@@ -282,17 +310,19 @@ button.link-card {
 
 .link-card__title {
   margin: 0;
-  font-size: clamp(0.72rem, calc(var(--hex-w) * 0.092), 1.05rem);
+  max-width: 100%;
+  font-size: clamp(0.68rem, calc(var(--hex-w) * 0.086), 1.02rem);
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.15;
   color: var(--text-primary);
   text-wrap: balance;
 }
 
 .link-card__subtitle {
   margin: 0;
-  font-size: clamp(0.62rem, calc(var(--hex-w) * 0.07), 0.875rem);
-  line-height: 1.25;
+  max-width: 100%;
+  font-size: clamp(0.58rem, calc(var(--hex-w) * 0.064), 0.84rem);
+  line-height: 1.2;
   color: var(--text-secondary);
   text-wrap: balance;
 }
