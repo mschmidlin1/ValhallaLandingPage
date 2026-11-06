@@ -75,7 +75,6 @@ body {
 .page-main {
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
   min-height: calc(100svh - 76px);
   padding: 8px max(10px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
@@ -83,14 +82,15 @@ body {
 
 @supports (justify-content: safe center) {
   .page-main {
-    align-items: safe center;
     justify-content: safe center;
   }
 }
 
 /* Flat-top hex cluster: one tile in the center, six sharing its edges.
-   .hive is the size container. The grid reads that width with cqw; querying
-   cqw on the sized element itself makes the cluster the wrong height.
+   .hive is the size container. The grid reads that width with cqi; querying
+   cqi on the sized element itself makes the cluster the wrong height.
+   With no query container, cqi is the viewport, which is what made the tiles
+   enormous on wide monitors. --hex-w cannot exceed the 35rem hive.
    The clip-path is written out on the tiles, not stored in a variable or an
    SVG url(), because those get dropped and the tiles paint as rectangles. */
 .hive {
@@ -100,8 +100,8 @@ body {
 }
 
 .link-grid {
-  --hex-gap: clamp(4px, 1.5cqw, 10px);
-  --hex-w: calc((100cqw - 1.7320508 * var(--hex-gap)) / 2.5);
+  --hex-gap: 8px;
+  --hex-w: min(210px, 28vw);
   --hex-h: calc(var(--hex-w) * 0.86602540378);
   --hex-step: calc(var(--hex-h) + var(--hex-gap));
   position: relative;
@@ -109,19 +109,26 @@ body {
   height: calc(3 * var(--hex-h) + 2 * var(--hex-gap));
 }
 
-@supports not (width: 1cqw) {
+@supports (width: 1cqi) {
+  .link-grid {
+    --hex-gap: clamp(4px, 1.5cqi, 10px);
+    --hex-w: min(
+      calc((35rem - 1.7320508 * var(--hex-gap)) / 2.5),
+      calc((100cqi - 1.7320508 * var(--hex-gap)) / 2.5)
+    );
+    --hex-h: calc(var(--hex-w) * 0.86602540378);
+    --hex-step: calc(var(--hex-h) + var(--hex-gap));
+  }
+}
+
+@supports not (width: 1cqi) {
   .hive {
     width: auto;
     container-type: normal;
   }
 
   .link-grid {
-    --hex-gap: 8px;
-    --hex-w: min(210px, 28vw);
-    --hex-h: calc(var(--hex-w) * 0.86602540378);
-    --hex-step: calc(var(--hex-h) + var(--hex-gap));
     width: min(100%, calc(2.5 * var(--hex-w) + 1.7320508 * var(--hex-gap)));
-    height: calc(3 * var(--hex-h) + 2 * var(--hex-gap));
   }
 }
 
